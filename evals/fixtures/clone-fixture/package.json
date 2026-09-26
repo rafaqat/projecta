@@ -1,0 +1,1 @@
+{ "name": "clone-fixture", "version": "1.0.0", "private": true, "type": "module", "description": "Seeded clone classes: exact (Type-1), renamed (Type-2), near-miss with a divergence (Type-3), and boilerplate hard negatives. FIXTURE-CANARY-clone-e5f3" }
