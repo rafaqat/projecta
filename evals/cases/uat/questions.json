@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "note": "UAT question pack (owner, 2026-09-14). {name} placeholders come from a vars file per repository; questions with unresolved placeholders are skipped and named in the report.",
+  "areas": [
+    {
+      "area": "Overview",
+      "questions": [
+        "What does this application do, based on its code?",
+        "What languages, frameworks, and major components does it use?",
+        "Where are the application entry points, and what happens during startup?"
+      ]
+    },
+    {
+      "area": "Architecture",
+      "questions": [
+        "How is the codebase organised, and what is each major directory responsible for?",
+        "Trace a typical request from its entry point through business logic to the database and back.",
+        "Which components communicate with external services, and how?"
+      ]
+    },
+    {
+      "area": "Finding functionality",
+      "questions": [
+        "Where is user registration implemented?",
+        "Which files implement authentication, and which implement authorisation?",
+        "Where is {rule} enforced, and who calls that code?"
+      ]
+    },
+    {
+      "area": "API endpoints",
+      "questions": [
+        "List the HTTP endpoints, their methods, handlers, and authentication requirements.",
+        "For {endpoint}, what inputs are accepted, how are they validated, and what responses can it return?",
+        "Which endpoints change data, and where are their database transactions handled?"
+      ]
+    },
+    {
+      "area": "Data and storage",
+      "questions": [
+        "What are the main data models, and how are they related?",
+        "Where is {field} created, updated, and read?",
+        "How are database migrations, constraints, and indexes defined?"
+      ]
+    },
+    {
+      "area": "Dependencies",
+      "questions": [
+        "What are the main direct dependencies, and what are they used for in the code?",
+        "Where is {library} imported and called?",
+        "Are there dependencies declared in the manifests with no usage visible in the indexed code?"
+      ]
+    },
+    {
+      "area": "Configuration",
+      "questions": [
+        "Which environment variables are referenced, and which appear required?",
+        "How does configuration differ between development, test, and production?",
+        "Where are secrets loaded, and is sensitive information potentially written to logs?"
+      ]
+    },
+    {
+      "area": "Errors and reliability",
+      "questions": [
+        "What happens when {service} times out or returns an error?",
+        "Where are retries configured, and could a retry repeat a write or payment?",
+        "How are background jobs scheduled, executed, and recovered after failure?"
+      ]
+    },
+    {
+      "area": "Security",
+      "questions": [
+        "Where does the application check that a user can access a specific record?",
+        "Trace user-controlled input from {endpoint} to database queries, file access, or shell execution.",
+        "How does the application prevent one customer from accessing another customer's data?"
+      ]
+    },
+    {
+      "area": "Tests",
+      "questions": [
+        "Which tests cover {feature}, and what behaviour do they actually assert?",
+        "What failure cases are tested for {endpoint}?",
+        "What important branches in {function} have no corresponding tests visible in the repository?"
+      ]
+    },
+    {
+      "area": "Making changes",
+      "questions": [
+        "If I add {field} to {entity}, which files would likely need changing, and why?",
+        "What callers and tests could be affected if I change {signature}?",
+        "Where should I implement {newFeature} to follow existing conventions?"
+      ]
+    }
+  ]
+}

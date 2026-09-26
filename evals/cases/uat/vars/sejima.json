@@ -1,0 +1,11 @@
+{
+  "note": "Parameters for https://github.com/MoveUpwards/Sejima (Swift UIKit component library, SwiftPM). Chosen from class, method and property names in the index; not expected answers. No HTTP endpoints or external services exist: {endpoint} and {service} are left unset so those questions are skipped and named.",
+  "rule": "the progress value bounds",
+  "field": "cornerRadius",
+  "entity": "MUButton",
+  "library": "Neumann",
+  "feature": "the button tap handling",
+  "function": "MUButton.set",
+  "signature": "MUProgress.set",
+  "name": "MUButton"
+}

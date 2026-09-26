@@ -1,0 +1,11 @@
+{
+  "note": "Parameters for https://github.com/m-i-n-a-r/birday @ daf6ad2 (Android app in Kotlin: Room, WorkManager, Navigation, views). Chosen from class, method, property and dependency names in the index; not expected answers (R-08). No HTTP endpoints or external services exist: {endpoint} and {service} are left unset so those questions are skipped and named. {newFeature} is left unset as for Sejima.",
+  "rule": "the birthday notification scheduling",
+  "field": "originalDate",
+  "entity": "Event",
+  "library": "androidx.work:work-runtime-ktx",
+  "feature": "importing birthdays from contacts",
+  "function": "EventWorker.sendNotification",
+  "signature": "MainViewModel.update",
+  "name": "EventDao"
+}
