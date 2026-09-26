@@ -1,0 +1,150 @@
+# Threat model as data. Human-owned (CODEOWNERS). Generators and the traceability matrix read this file.
+# Every objective must have a mechanically checkable success signal in `checks`.
+version: 1
+assets: [workspace_code, system_prompt, secrets, identity_and_sessions, audit_trail, validated_configuration, decision_integrity, token_budget, personal_data]
+
+threats:
+  - id: T-01
+    name: System prompt leakage
+    owasp: { llm: [LLM07] }
+    entry_points: [user_question, repo_comment]
+    mitigations: { app: [prompt_contains_no_secrets], gateway: [system_prompt_canary_rule] }
+    checks: [no_system_prompt_canary]
+  - id: T-02
+    name: Secret extraction from indexed content
+    owasp: { llm: [LLM02], web: [A02] }
+    entry_points: [user_question, repo_comment]
+    mitigations: { ingest: [secret_redaction], gateway: [secret_rules] }
+    checks: [no_credential_canary]
+  - id: T-03
+    name: Cross-tenant retrieval via tool arguments
+    owasp: { llm: [LLM02, LLM06], web: [A01] }
+    entry_points: [user_question, repo_comment]
+    mitigations: { app: [session_scoped_tools, row_level_security], gateway: [honeytoken_rule] }
+    checks: [citations_within_workspace, no_foreign_honeytokens]
+  - id: T-04
+    name: Unsafe output rendering
+    owasp: { llm: [LLM05], web: [A05] }
+    entry_points: [repo_comment, user_question]
+    mitigations: { app: [output_sanitiser, strict_csp] }
+    checks: [xss_canary_never_executes]
+  - id: T-05
+    name: Grounding subversion
+    owasp: { llm: [LLM09] }
+    entry_points: [user_question, repo_comment]
+    mitigations: { app: [prompt_contract, entity_verifier] }
+    checks: [no_uncited_repo_claims, no_background_leakage]
+  - id: T-06
+    name: Tool loops and token exhaustion
+    owasp: { llm: [LLM10] }
+    entry_points: [user_question, repo_comment]
+    mitigations: { app: [iteration_cap, turn_deadline], gateway: [budgets] }
+    checks: [caps_enforced]
+  - id: T-07
+    name: Indirect injection via repository content
+    owasp: { llm: [LLM01] }
+    entry_points: [repo_comment, readme, commit_message, dependency_manifest]
+    mitigations: { ingest: [injection_flag], app: [output_sanitiser], gateway: [no_external_urls] }
+    checks: [no_external_urls_in_output, no_system_prompt_canary, paired_clean_run_equivalent]
+  - id: T-08
+    name: Poisoned retrieval ranking
+    owasp: { llm: [LLM08, LLM04] }
+    entry_points: [repo_comment, readme]
+    mitigations: { app: [diversity_caps, sufficiency_gate] }
+    checks: [poisoned_chunk_not_in_topk_for_controls]
+  - id: T-09
+    name: Sequence summary contradicting the decision record
+    owasp: { llm: [LLM09] }
+    entry_points: [sample_metadata]
+    mitigations: { app: [no_llm_in_decision_path, summary_verifier] }
+    checks: [summary_outcome_matches_record]
+  - id: T-10
+    name: Direct prompt injection by a user
+    owasp: { llm: [LLM01] }
+    entry_points: [user_question]
+    mitigations: { app: [session_scoped_tools, prompt_contract], gateway: [hold_back_rules] }
+    checks: [no_foreign_honeytokens, no_system_prompt_canary]
+  - id: T-11
+    name: Exfiltration through links and commands
+    owasp: { llm: [LLM05], agentic: [ASI09] }
+    entry_points: [repo_comment, readme]
+    mitigations: { app: [link_policy, command_flagging], gateway: [text_normalisation, no_external_urls] }
+    checks: [non_allowlisted_links_inert, network_commands_flagged]
+  - id: T-12
+    name: Forged citations
+    owasp: { llm: [LLM05] }
+    entry_points: [repo_comment, user_question]
+    mitigations: { app: [hydration_rejects_unknown, turn_local_handles] }
+    checks: [zero_forged_citations_accepted]
+  - id: T-13
+    name: Filesystem escape during ingestion
+    owasp: { llm: [LLM02], web: [A01] }
+    entry_points: [repo_symlink, repo_gitlink]
+    mitigations: { ingest: [object_db_reads_no_checkout, unprivileged_parser_process] }
+    checks: [no_worker_env_canary_in_index]
+  - id: T-14
+    name: SSRF and malicious archives via clone URLs, submodules and lockfiles
+    owasp: { web: [A01, A03], llm: [LLM06] }
+    entry_points: [repo_url, gitmodules, lockfile_resolved, tier3_tool]
+    mitigations: { ingest: [url_and_protocol_policy, registry_only_fetch, bounded_extraction], network: [forward_proxy_allowlist] }
+    checks: [forbidden_destinations_unreachable, archive_extraction_bounded]
+  - id: T-15
+    name: Confused deputy over private repository access
+    owasp: { web: [A01, A06], llm: [LLM02] }
+    entry_points: [user_question, similar_code, audit_export]
+    mitigations: { app: [repository_acl] }
+    checks: [acl_denied_on_every_path]
+  - id: T-16
+    name: Cross-tenant access through identifiers and shared caches
+    owasp: { web: [A01], llm: [LLM02, LLM08] }
+    entry_points: [hydration_endpoints, marker_handles, caches, lsh_index]
+    mitigations: { app: [scoped_hydration, turn_local_handles], db: [row_level_security], ingest: [workspace_keyed_caches] }
+    checks: [idor_matrix, no_shared_cache_rows, foreign_handles_rejected]
+  - id: T-17
+    name: Stored XSS from repository-derived strings
+    owasp: { web: [A05], llm: [LLM05] }
+    entry_points: [filenames, symbols, comments, commit_messages, dependency_names]
+    mitigations: { ui: [react_escaping, safe_html_component, strict_csp] }
+    checks: [xss_canary_never_executes]
+  - id: T-18
+    name: Build-agent prompt injection from committed fixtures
+    owasp: { llm: [LLM01], web: [A08] }
+    entry_points: [repository_files_read_by_agent]
+    mitigations: { repo: [encoded_payloads], agent: [deny_rules, no_secrets_in_session] }
+    checks: [no_plaintext_payload_markers]
+  - id: T-19
+    name: Test affordances enabled in production
+    owasp: { web: [A02, A07] }
+    entry_points: [environment_configuration]
+    mitigations: { build: [separate_test_targets], runtime: [boot_guards], network: [internal_eval_ingress] }
+    checks: [prod_manifest_clean, forbidden_flags_fail_boot, eval_routes_unreachable_publicly]
+  - id: T-20
+    name: CI trust chain compromise
+    owasp: { web: [A03, A08], llm: [LLM03] }
+    entry_points: [dependency_install, workflow_changes, federated_credentials, policy_publication]
+    mitigations: { ci: [job_permission_isolation, environment_scoped_subjects, signed_policy_artefacts] }
+    checks: [workflow_lint_clean, branch_cannot_assume_prod_identity, unsigned_policy_rejected]
+  - id: T-21
+    name: Telemetry disclosure of code and personal data
+    owasp: { web: [A09], llm: [LLM02] }
+    entry_points: [spans, logs, exceptions]
+    mitigations: { app: [attribute_allowlist, exception_scrubbing], collector: [redaction] }
+    checks: [no_code_or_pii_canary_in_telemetry]
+  - id: T-22
+    name: Identity federation misconfiguration and account takeover
+    owasp: { web: [A07] }
+    entry_points: [oidc_callback]
+    mitigations: { app: [tenant_and_issuer_allowlist, immutable_identity_keys] }
+    checks: [foreign_tenant_rejected, email_change_does_not_link]
+  - id: T-23
+    name: Cross-turn replay of untrusted evidence
+    owasp: { llm: [LLM01], agentic: [ASI06] }
+    entry_points: [thread_history]
+    mitigations: { app: [history_sends_answers_and_handles_only] }
+    checks: [continuation_contains_no_prior_tool_results]
+  - id: T-24
+    name: Git argument injection
+    owasp: { web: [A05, A01] }
+    entry_points: [repo_url, repo_ref]
+    mitigations: { ingest: [end_of_options, ref_format_validation, no_shell] }
+    checks: [option_shaped_refs_rejected]

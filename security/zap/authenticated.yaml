@@ -1,0 +1,54 @@
+# ZAP Automation Framework — authenticated active scan for a STAGING target (never production).
+# Repeatable auth + scope + OpenAPI import + active attacks. Set ZAP_TARGET and creds via env.
+# Uses disposable test data (a seeded developer). Run against staging, not the ephemeral CI app.
+env:
+  contexts:
+    - name: projectA
+      urls:
+        - "${ZAP_TARGET}"
+      includePaths:
+        - "${ZAP_TARGET}/api/.*"
+        - "${ZAP_TARGET}/w/.*"
+      excludePaths:
+        - "${ZAP_TARGET}/auth/logout.*"
+      authentication:
+        method: "browser"
+        parameters:
+          loginPageUrl: "${ZAP_TARGET}/auth/login"
+          browserId: "firefox-headless"
+        verification:
+          method: "poll"
+          pollUrl: "${ZAP_TARGET}/api/me"
+          pollFrequency: 60
+          pollUnits: "requests"
+          loggedInRegex: '"email"'
+          loggedOutRegex: "errors/unauthenticated"
+      sessionManagement:
+        method: "cookie"
+      users:
+        - name: "developer"
+          credentials:
+            username: "${ZAP_USERNAME}"
+            password: "${ZAP_PASSWORD}"
+  parameters:
+    failOnError: true
+    progressToStdout: true
+jobs:
+  - type: passiveScan-config
+    parameters: { scanOnlyInScope: true }
+  - type: openapi
+    parameters:
+      apiFile: "/zap/wrk/security/zap/openapi.json"
+      targetUrl: "${ZAP_TARGET}"
+      context: projectA
+  - type: spider
+    parameters: { context: projectA, user: developer, maxDuration: 5 }
+  - type: passiveScan-wait
+    parameters: { maxDuration: 5 }
+  - type: activeScan
+    parameters: { context: projectA, user: developer, maxRuleDurationInMins: 3 }
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: zap-authenticated

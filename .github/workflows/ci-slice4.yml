@@ -1,0 +1,250 @@
+name: ci-slice4
+
+# Runs on every branch so each slice tag/branch validates independently.
+on:
+  push:
+  pull_request:
+
+# Slice 3 adds the LLM gateway boundary (ADR-034): the app requires a gateway base URL and token
+# at boot. Provided workflow-wide so every job that boots the app validates it.
+# Telemetry (ADR-023): config/otel.ts builds the OTLP exporters when it loads, so a valid
+# endpoint must be present at boot even though nothing collects on it in CI (the batch exporter
+# drops what it cannot deliver). Matches the committed .env.example, which CI copies before boot.
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+  LLM_GATEWAY_TOKEN: test-gateway-token
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4317
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slice4:
+    name: audit, cost & gateway (migrate + functional + conformance)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: development
+      HOST: localhost
+      PORT: '4444'
+      LOG_LEVEL: info
+      APP_KEY: ${{ github.sha }} # boot only; nothing is encrypted with it here
+      APP_URL: http://localhost:4444
+      APP_ENV: test
+      APP_NAME: projectA
+      APP_VERSION: 0.0.0
+      OIDC_ISSUER: http://127.0.0.1:9100
+      OIDC_ALLOWED_ISSUERS: http://127.0.0.1:9100
+      OIDC_CLIENT_ID: projectA
+      OIDC_CLIENT_SECRET: test-client-secret
+      OIDC_ALLOWED_TENANTS: tenant-local
+      SESSION_DRIVER: database
+      GIT_ALLOWED_HOSTS: localhost:8443
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_DATABASE: app
+      AUDIT_SIGNING_SEED: '0000000000000000000000000000000000000000000000000000000000000000'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Build Postgres (pgvector + pg_textsearch, ADR-0003) — bm25 access method
+        run: docker build --build-arg TARGETARCH=amd64 -f docker/postgres/Dockerfile -t pa-postgres:ci .
+      - name: Start Postgres (init.sql bakes app + audit_writer + gateway + cost_reconciler roles, databases, and extensions)
+        run: |
+          docker run -d --name pgts \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=app \
+            -p 5432:5432 pa-postgres:ci
+      - name: Wait until Postgres and init.sql are ready
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if PGPASSWORD=postgres pg_isready -h localhost -U postgres -d app >/dev/null 2>&1 \
+               && PGPASSWORD=postgres psql -h localhost -U postgres -d app_test -c 'select 1' >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready"; docker logs pgts; exit 1
+      - name: Migrations run as the app role
+        run: node ace.js migration:run --force
+      - name: Audit + cost ledgers, reconciliation, RLS (Japa functional, against app_test)
+        env:
+          DB_DATABASE: app_test
+        # Scoped to slice 4's own specs. The ingest/parse functional specs load real model weights
+        # (ADR-040: no model server in CI) and are exercised model-free by the slice2 job.
+        run: >-
+          node test.js --suite functional
+          --files audit
+          --files cost
+      - name: Gateway conformance (Japa conformance)
+        env:
+          DB_DATABASE: app_test
+        # Scoped by --files (the suite flag alone does not isolate): the gateway conformance spec
+        # only, never the model-weight ingest/parse specs this job carries no weights for.
+        run: node test.js --suite conformance --files conformance/gateway
+
+  slice4-evals:
+    name: slice 4 evals — adversarial greens (injection fails closed, no plaintext payload)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: development
+      HOST: localhost
+      PORT: '4444'
+      LOG_LEVEL: info
+      APP_KEY: ${{ github.sha }} # boot only; nothing is encrypted with it here
+      APP_URL: http://localhost:4444
+      APP_ENV: test
+      APP_NAME: projectA
+      APP_VERSION: 0.0.0
+      OIDC_ISSUER: http://127.0.0.1:9100
+      OIDC_ALLOWED_ISSUERS: http://127.0.0.1:9100
+      OIDC_CLIENT_ID: projectA
+      OIDC_CLIENT_SECRET: test-client-secret
+      OIDC_ALLOWED_TENANTS: tenant-local
+      SESSION_DRIVER: database
+      GIT_ALLOWED_HOSTS: localhost:8443
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_DATABASE: app_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      # No model weights: the adversarial measurement is gate + scripted-model only (no ingest, no
+      # embedder), so the weights cache/fetch the other -evals jobs carry is dropped. Postgres stays
+      # because the functional bootstrap migrates and starts the http server before any spec runs.
+      - name: Build Postgres (pgvector + pg_textsearch) — the functional bootstrap migrate needs it
+        run: docker build --build-arg TARGETARCH=amd64 -f docker/postgres/Dockerfile -t pa-postgres:ci .
+      - name: Start Postgres (init.sql bakes the app role, databases, and extensions)
+        run: |
+          docker run -d --name pgts \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=app \
+            -p 5432:5432 pa-postgres:ci
+      - name: Wait until Postgres and init.sql are ready
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if PGPASSWORD=postgres pg_isready -h localhost -U postgres -d app >/dev/null 2>&1 \
+               && PGPASSWORD=postgres psql -h localhost -U postgres -d app_test -c 'select 1' >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready"; docker logs pgts; exit 1
+      - name: Adversarial measurement — the output gate withholds a hijacked marker (writes runs/adversarial.latest.json)
+        env:
+          DB_DATABASE: app_test
+        run: node test.js --suite functional --files evals/adversarial_run
+      - name: The adversarial tier greens in the harness
+        run: |
+          set -euo pipefail
+          node evals/harness/run.ts
+          node -e 'const fs=require("fs");
+            const r=JSON.parse(fs.readFileSync("evals/runs/latest.json","utf8"));
+            const t=r.tiers.find(x=>x.tier==="adversarial");
+            const red=(t?t.metrics:[]).filter(m=>!m.met);
+            if(!t||red.length){console.error("adversarial NOT green:", red.map(m=>m.key+"(actual="+m.actual+")").join(", ")); process.exit(1);}
+            console.log("adversarial GREEN:", t.metrics.map(m=>m.key+"="+m.actual).join(", "));'
+
+  image-e2e:
+    name: image e2e — first ingest → cited answer (compiled images, scripted provider, no key)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # The one path CI otherwise never exercises: the COMPILED images make up ships, booted, ingesting
+    # a repo, and answering with a verified citation. The gateway routes to the recorded provider stub
+    # (UPSTREAM_BASE_URL) instead of Anthropic, so it is deterministic, needs no API key, and costs
+    # nothing. This is the job that would have caught the adonisrc metaFiles gap (prompts missing from
+    # the image => PROMPTS load ENOENT => no answer), which compiled-build's "server.js exists" cannot.
+    env:
+      UPSTREAM_BASE_URL: http://provider-stub:9200
+      OIDC_ISSUER_LOCAL: http://mock-oidc:9000
+      # The fixed local seed + its public key from .env.example: signs and verifies the gateway policy.
+      GATEWAY_POLICY_SEED: 1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809
+      GATEWAY_POLICY_PUBLIC_KEY: '{"crv":"Ed25519","x":"Bpq6h3R92cH0byQATreeBeuPLg8sOt_d5gweLgC6yDg","kty":"OKP"}'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Env + a signed gateway policy (fixed local seed; the image mounts it)
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          node ace.js generate:key >/dev/null
+          node ace.js gateway:policy
+      - name: Boot the conformance image stack — provider stub as upstream, git fixture as the repo
+        run: |
+          set -euo pipefail
+          # The otel-collector writes here; without it the collector exits and --wait fails
+          # (mirrors `make conformance`).
+          mkdir -p tmp/otel && chmod 0777 tmp/otel
+          docker compose --env-file .env -f docker/compose.yml -f docker/compose.conformance.yml --profile test \
+            up -d --build --wait --wait-timeout 600 \
+            web worker git-fixture provider-stub mock-oidc
+      - name: A clean first ingest answers with a verified citation
+        run: |
+          set -euo pipefail
+          C="docker compose --env-file .env -f docker/compose.yml -f docker/compose.conformance.yml --profile test"
+          # Seed developer@example.test + the Local workspace; capture its handle.
+          WS=$($C exec -T web node ace.js dev:seed | sed -nE 's#.*/w/([a-z0-9]+).*#\1#p' | tail -1)
+          test -n "$WS" || { echo "::error::no workspace handle from dev:seed"; exit 1; }
+          # Register the fixture repo (git-fixture serves the shop fixture over TLS) and index it.
+          REPO=$($C exec -T web node ace.js repository:register --workspace "$WS" \
+                   --url https://git-fixture:8443/fixtures/shop.git --quiet | tr -d '[:space:]')
+          test -n "$REPO" || { echo "::error::register returned no handle"; exit 1; }
+          # 'failed N/M' is the in-progress label; it flips to 'indexed' at completion.
+          for _ in $(seq 1 72); do
+            st=$($C exec -T web node ace.js repository:status --workspace "$WS" --repository "$REPO" | tr -d '\r')
+            echo "status: $st"
+            case "$st" in *indexed*) break;; esac
+            sleep 5
+          done
+          $C exec -T web node ace.js repository:status --workspace "$WS" --repository "$REPO" | grep -q indexed \
+            || { echo "::error::ingest never reached indexed"; $C logs worker | tail -80; exit 1; }
+          # Ask one question. The stub replays a recorded answer that carries a citation; a missing
+          # prompt file would fail here at PROMPTS load, before any answer is produced.
+          echo '{"version":1,"areas":[{"area":"Overview","questions":["What does this application do, based on its code?"]}]}' \
+            | $C exec -T web node ace.js uat:run --workspace "$WS" --repository "$REPO" \
+                --questions - --out /tmp/e2e.json
+          $C cp web:/tmp/e2e.json e2e.json
+          # Surface any app-side error (e.g. a failing verification query) behind a failed turn.
+          $C logs web 2>&1 | grep -iE 'error|"level":50|sqlstate|column|42703|relation' | tail -40 || true
+          # The stub replays a fixed citation that the verifier cannot ground in the fixture, so the
+          # turn is legitimately "unverified" — a real image break (missing prompt, missing column)
+          # instead makes the turn "failed". So gate on: no hard failure, and a citation was produced.
+          node -e '
+            const d = require("./e2e.json");
+            const c = d.summary.counts;
+            const answered = (c.ok || 0) + (c.unverified || 0);
+            const cites = (d.cases || []).reduce((n, x) => n + (x.citations || 0), 0);
+            if (c.failed > 0 || c.blocked > 0 || answered < 1 || cites < 1) {
+              console.error("::error::image e2e did not produce a clean cited answer", JSON.stringify({ counts: c, citations: cites }));
+              process.exit(1);
+            }
+            console.log("image e2e OK:", JSON.stringify({ counts: c, citations: cites }));
+          '
+      - name: Teardown
+        if: always()
+        run: >-
+          docker compose --env-file .env -f docker/compose.yml -f docker/compose.conformance.yml
+          --profile test down -v || true

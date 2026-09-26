@@ -1,0 +1,20 @@
+{
+  "en": {
+    "greeting": "Willkommen zurück, {name}",
+    "instruction": "Geben Sie Ihren Code ein und drücken Sie Weiter",
+    "family": "👨‍👩‍👧",
+    "chapter": "Ⅳ"
+  },
+  "fa": {
+    "greeting": "خوش‌آمدید",
+    "instruction": "کد خود را وارد کنید"
+  },
+  "tr": {
+    "greeting": "Tekrar hoş geldınız",
+    "instruction": "Kodunuzu girin"
+  },
+  "vi": {
+    "greeting": "Chào mừng bạn trở lại",
+    "instruction": "Nhập mã của bạn"
+  }
+}

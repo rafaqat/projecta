@@ -1,0 +1,6 @@
+[project]
+name = "redteam-generators"
+version = "0.0.0"
+description = "Lane 2 generators (design §12): PyRIT converter variants and the Azure AI Red Teaming Agent scorecard. Offline and UAT only; outputs are written base64-encoded into evals/redteam/generated/ and reviewed before promotion."
+requires-python = ">=3.11"
+dependencies = ["pyrit>=0.9", "azure-ai-evaluation[redteam]>=1.10"]

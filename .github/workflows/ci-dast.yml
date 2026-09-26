@@ -1,0 +1,95 @@
+name: ci-dast
+
+# DAST: boots the compiled app (provider-stub as the model backend, mock OIDC — deterministic,
+# key-free) and runs an OWASP ZAP passive baseline against its public surface via the ZAP
+# Automation Framework. Passive only (no active attacks) — safe to run on every main push/PR.
+# The authenticated ACTIVE scan (security/zap/authenticated.yaml, with the OpenAPI import) is for
+# a staging target and runs on demand.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  UPSTREAM_BASE_URL: http://provider-stub:9200
+  OIDC_ISSUER_LOCAL: http://mock-oidc:9000
+  GATEWAY_POLICY_SEED: 1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809
+  GATEWAY_POLICY_PUBLIC_KEY: '{"crv":"Ed25519","x":"Bpq6h3R92cH0byQATreeBeuPLg8sOt_d5gweLgC6yDg","kty":"OKP"}'
+  LLM_GATEWAY_TOKEN: test-gateway-token
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zap-baseline:
+    name: DAST — OWASP ZAP passive baseline (Automation Framework)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Env + signed gateway policy
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          node ace.js generate:key >/dev/null
+          node ace.js gateway:policy
+      - name: Boot the app on 127.0.0.1:3333 (ingress) — provider stub + mock OIDC
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/otel && chmod 0777 tmp/otel
+          docker compose --env-file .env -f docker/compose.yml --profile test \
+            up -d --build --wait --wait-timeout 600 \
+            web worker provider-stub mock-oidc ingress
+      - name: Wait for the app to answer on the host
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 5 http://localhost:3333/login || true)
+            echo "GET /login -> $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 3
+          done
+          echo "::error::app never answered on :3333"; docker compose -f docker/compose.yml logs web | tail -60; exit 1
+      - name: ZAP passive baseline (Automation Framework plan)
+        run: |
+          set -euo pipefail
+          # --network host lets ZAP reach the app on localhost:3333, but the ingress already
+          # publishes 8080 (keycloak), which is ZAP's default proxy port -> BindException. Move
+          # ZAP's proxy to a free port; the scan targets :3333 per the plan, so this is cosmetic.
+          docker run --network host -v "$PWD:/zap/wrk:rw" --user root \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -cmd -port 8090 -autorun /zap/wrk/security/zap/baseline.yaml || true
+          test -f zap-baseline.json || { echo "::error::ZAP produced no report"; exit 1; }
+          echo "=== ZAP baseline alert summary ==="
+          node -e '
+            const r = require("./zap-baseline.json");
+            const alerts = (r.site || []).flatMap(s => s.alerts || []);
+            const by = {};
+            for (const a of alerts) by[a.riskdesc?.split(" ")[0] || "?"] = (by[a.riskdesc?.split(" ")[0] || "?"]||0) + 1;
+            console.log("alerts by risk:", JSON.stringify(by));
+            const high = alerts.filter(a => (a.riskcode|0) >= 3);
+            if (high.length) { console.error("::error::ZAP found High-risk alerts:", high.map(a=>a.name).join(", ")); process.exit(1); }
+            console.log("no High-risk alerts");
+          '
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.2
+        with:
+          name: zap-baseline-report
+          path: |
+            zap-baseline.json
+            zap-baseline.html
+          if-no-files-found: ignore
+      - name: Teardown
+        if: always()
+        run: docker compose -f docker/compose.yml --profile test down -v || true

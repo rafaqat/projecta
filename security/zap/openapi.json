@@ -1,0 +1,806 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "projectA API",
+    "version": "0.0.0",
+    "description": "Generated from start/routes.ts for ZAP API scanning"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3333"
+    }
+  ],
+  "paths": {
+    "/api/me": {
+      "get": {
+        "summary": "GET /api/me",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        }
+      }
+    },
+    "/about": {
+      "get": {
+        "summary": "GET /about",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        }
+      }
+    },
+    "/w/{workspace}": {
+      "get": {
+        "summary": "GET /w/{workspace}",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/w/{workspace}/releases": {
+      "get": {
+        "summary": "GET /w/{workspace}/releases",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/w/{workspace}/isolation": {
+      "get": {
+        "summary": "GET /w/{workspace}/isolation",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/spend": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/spend",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/spend/members": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/spend/members",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/members": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/members",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/w/{workspace}/repos": {
+      "post": {
+        "summary": "POST /w/{workspace}/repos",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/files": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/files",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/w/{workspace}/r/{repository}": {
+      "get": {
+        "summary": "GET /w/{workspace}/r/{repository}",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "PATCH /w/{workspace}/r/{repository}",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DELETE /w/{workspace}/r/{repository}",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/w/{workspace}/r/{repository}/duplicates": {
+      "get": {
+        "summary": "GET /w/{workspace}/r/{repository}/duplicates",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/spdx": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/spdx",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/cyclonedx": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/cyclonedx",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/links": {
+      "post": {
+        "summary": "POST /api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/links",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/turns/{turn}/dependencies/links",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/dependencies/links/{link}": {
+      "delete": {
+        "summary": "DELETE /api/w/{workspace}/r/{repository}/dependencies/links/{link}",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "link",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/ingest": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/ingest",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "POST /api/w/{workspace}/r/{repository}/ingest",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/scope": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/scope",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns": {
+      "post": {
+        "summary": "POST /api/w/{workspace}/r/{repository}/turns",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/history": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/history",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DELETE /api/w/{workspace}/r/{repository}/history",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns/{turn}/decision": {
+      "get": {
+        "summary": "GET /api/w/{workspace}/r/{repository}/turns/{turn}/decision",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/w/{workspace}/r/{repository}/turns/{turn}/review": {
+      "post": {
+        "summary": "POST /api/w/{workspace}/r/{repository}/turns/{turn}/review",
+        "responses": {
+          "200": {
+            "description": "ok"
+          },
+          "401": {
+            "description": "unauthenticated"
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
