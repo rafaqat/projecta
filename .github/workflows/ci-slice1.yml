@@ -1,0 +1,94 @@
+name: ci-slice1
+
+# Runs on every branch so each slice tag/branch validates independently.
+on:
+  push:
+  pull_request:
+
+# Slice 3 adds the LLM gateway boundary (ADR-034): the app requires a gateway base URL and token
+# at boot. Provided workflow-wide so every job that boots the app validates it.
+# Telemetry (ADR-023): config/otel.ts builds the OTLP exporters when it loads, so a valid
+# endpoint must be present at boot even though nothing collects on it in CI (the batch exporter
+# drops what it cannot deliver). Matches the committed .env.example, which CI copies before boot.
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+  LLM_GATEWAY_TOKEN: test-gateway-token
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4317
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slice1:
+    name: identity & tenancy (migrate + boot + RLS)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: development
+      HOST: localhost
+      PORT: '4444'
+      LOG_LEVEL: info
+      APP_KEY: ${{ github.sha }} # boot only; nothing is encrypted with it here
+      APP_URL: http://localhost:4444
+      APP_ENV: test
+      APP_NAME: projectA
+      APP_VERSION: 0.0.0
+      OIDC_ISSUER: http://127.0.0.1:9100
+      OIDC_ALLOWED_ISSUERS: http://127.0.0.1:9100
+      OIDC_CLIENT_ID: projectA
+      OIDC_CLIENT_SECRET: test-client-secret
+      OIDC_ALLOWED_TENANTS: tenant-local
+      SESSION_DRIVER: database
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_DATABASE: app
+      GIT_ALLOWED_HOSTS: github.com
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Build Postgres (pgvector + pg_textsearch, ADR-0003) — bm25 access method
+        run: docker build --build-arg TARGETARCH=amd64 -f docker/postgres/Dockerfile -t pa-postgres:ci .
+      - name: Start Postgres (init.sql bakes the app role, databases, and extensions)
+        run: |
+          docker run -d --name pgts \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=app \
+            -p 5432:5432 pa-postgres:ci
+      - name: Wait until Postgres and init.sql are ready
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if PGPASSWORD=postgres pg_isready -h localhost -U postgres -d app >/dev/null 2>&1 \
+               && PGPASSWORD=postgres psql -h localhost -U postgres -d app_test -c 'select 1' >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready"; docker logs pgts; exit 1
+      - name: Migrations run as the app role
+        run: node ace.js migration:run --force
+      - name: Boot and health-check
+        run: |
+          set -euo pipefail
+          node serve.js > /tmp/server.log 2>&1 &
+          pid=$!
+          ok=0
+          for _ in $(seq 1 25); do
+            if curl -fsS http://localhost:4444/healthz | grep -q '"status":"ok"'; then ok=1; break; fi
+            sleep 1
+          done
+          kill "$pid" 2>/dev/null || true
+          test "$ok" = "1" || { echo '--- server.log ---'; cat /tmp/server.log; exit 1; }
+      - name: Two-workspace RLS ablation (Japa functional, against app_test)
+        env:
+          DB_DATABASE: app_test
+        run: node test.js --suite functional --files identity --files tenancy

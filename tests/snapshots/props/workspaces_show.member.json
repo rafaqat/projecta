@@ -1,0 +1,24 @@
+{
+  "component": "workspaces/show",
+  "props": {
+    "canManage": false,
+    "errors": {},
+    "user": {
+      "fullName": "A member",
+      "email": "<email>",
+      "initials": "AM"
+    },
+    "workspace": {
+      "handle": "<workspace-handle>",
+      "name": "Workspace a"
+    },
+    "repositories": [
+      {
+        "handle": "<open-handle>",
+        "name": "a-open",
+        "url": "https://github.com/example/open",
+        "visibility": "workspace"
+      }
+    ]
+  }
+}
