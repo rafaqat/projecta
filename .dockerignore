@@ -1,0 +1,10 @@
+# Host-only artifacts that must never enter the image build context.
+#
+# The model-server virtualenv is created on the host by `make model-server` / `make up-gpu`; its
+# `bin/python` is a symlink to a host Python that does not resolve inside the Linux builder, which
+# crashes build-manifest.mjs's file walk (statSync ENOENT) and fails the app-test image build. CI
+# has no host venv, so this only bit local `make build`/`make redeploy` after `make up-gpu`.
+**/.venv
+services/model-server/.venv
+**/__pycache__
+**/*.pyc

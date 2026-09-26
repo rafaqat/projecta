@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build output
+dist/
+build/
+# .adonisjs/ is NOT ignored: the tuyau/adonis codegen barrels under .adonisjs/server
+# (#generated/controllers etc., imported by start/routes.ts) and .adonisjs/client are
+# committed as the codegen source of truth. They must exist before the kernel boots for any
+# entrypoint (migration:run, redteam:run), not just `node ace build`. Regenerate only in a
+# reviewed PR.
+tmp/
+coverage/
+*.tsbuildinfo
+
+# Environment & secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Eval run artefacts (reports are regenerated; only committed cases are tracked)
+evals/runs/
+
+# Model weights — fetched at build time, SHA-256-pinned in models.lock.json (which IS tracked).
+# ~877 MB of ONNX weights + tree-sitter grammar wasm; never commit them.
+models/
+
+# Red-team discovery staging (ADR-0006): only the promoted, human-reviewed variants.json is
+# tracked. The regenerable raw payloads (pyrit-variants.json, discovered-cases.json) are staging
+# for review before promotion and must never be committed (encoded attack payloads).
+evals/redteam/generated/*
+!evals/redteam/generated/.gitkeep
+!evals/redteam/generated/variants.json

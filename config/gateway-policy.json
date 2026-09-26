@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "issuedAt": "2026-09-26T14:47:10.942Z",
+  "models": [
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5-20251001"
+  ],
+  "configHashes": [
+    "7211951ed0a77518fbf910e49c0291750245035ef3dbd223213d96d86ace157b",
+    "f8d0af9726faa47c2d929cbee496fe8e158d82f8f432ccc1e15901df01ab9c0d"
+  ],
+  "promptHashes": [
+    "86fd2b4266c8ed85d1cbab6eaa83ac77f3926400bdcd76dc5666801512839080",
+    "59d7d791aeb4026c670ebf2587518c6151c9a2b08045e38821737b7e28faba12"
+  ],
+  "toolDefinitionHashes": [
+    "b8dcf4c9d115f18f9f241c93d384499b20a5b8045267c59e4a89a4268da28901",
+    "3e9f640930698888a4319446b707561a0ff266db2efc73c56ad2ece19daac0d0"
+  ],
+  "blockTypes": [
+    "text",
+    "search_result",
+    "tool_use",
+    "tool_result"
+  ],
+  "canaries": [],
+  "allowedUrlHosts": [],
+  "routes": {
+    "default": "anthropic",
+    "workspaces": {}
+  },
+  "attributionKeys": {
+    "web": {
+      "crv": "Ed25519",
+      "x": "8_CY2OptJkrgUAGs8cXIWoDSbZDX7PnKfUToYCF7w94",
+      "kty": "OKP"
+    },
+    "worker": {
+      "crv": "Ed25519",
+      "x": "CCg-JIc-D3X6M9RkVJDBRPxe7TU6uBLL0BLoSq7KHdg",
+      "kty": "OKP"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "realm": "cia",
+  "enabled": true,
+  "displayName": "Code Intelligence Assistant",
+  "loginTheme": "entra-like",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "code-intelligence-assistant",
+      "name": "Code Intelligence Assistant",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-dev-client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:3333/auth/callback", "http://localhost:3334/auth/callback"],
+      "webOrigins": ["http://localhost:3333"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3333/*"
+      },
+      "defaultClientScopes": ["openid", "profile", "email"],
+      "protocolMappers": [
+        {
+          "name": "oid",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "id",
+            "claim.name": "oid",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tid",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "tid",
+            "claim.value": "tenant-local",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "2e0e8851-4e38-47b4-aa85-bef4a4558ea6",
+      "username": "developer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Developer",
+      "email": "developer@example.test",
+      "credentials": [{ "type": "password", "value": "developer", "temporary": false }]
+    },
+    {
+      "id": "7c1d5f0a-3b8e-4c2d-9e6f-1a2b3c4d5e6f",
+      "username": "reviewer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Second",
+      "lastName": "Reviewer",
+      "email": "reviewer@example.test",
+      "credentials": [{ "type": "password", "value": "reviewer", "temporary": false }]
+    }
+  ]
+}

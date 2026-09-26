@@ -1,0 +1,32 @@
+name: ci-scan
+
+# The supply-chain + SAST posture (make scan): secrets, vulnerable deps, lockfile
+# integrity, Semgrep rules, workflow hardening, and the adversarial-payload guard. Runs on every
+# branch so a slice tag/branch is scanned on its own.
+on:
+  push:
+  pull_request:
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: security scan — gitleaks · osv-scanner · lockfile-lint · semgrep · zizmor · payloads
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks scans history
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci --ignore-scripts && npm rebuild re2
+      - name: Install scanners (pinned by version and SHA-256)
+        run: scripts/install-scanners.sh
+      - name: make scan
+        run: make scan

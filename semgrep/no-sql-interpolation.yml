@@ -1,0 +1,41 @@
+rules:
+  - id: no-sql-interpolation
+    message: >-
+      Data from a function parameter reaches SQL text. Bind it (`:name` or `?`
+      placeholders) instead of interpolating it into the query string (SEC-31).
+      Only literal fragments chosen by code may be assembled into query text.
+    severity: ERROR
+    languages: [typescript, javascript]
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern-inside: |
+                  function $F(..., $P, ...) { ... }
+              - pattern-inside: |
+                  async function $F(..., $P, ...) { ... }
+              - pattern-inside: |
+                  (..., $P, ...) => { ... }
+              - pattern-inside: |
+                  async (..., $P, ...) => { ... }
+              - pattern-inside: |
+                  $M(..., $P, ...) { ... }
+              - pattern-inside: |
+                  async $M(..., $P, ...) { ... }
+          - pattern: $P
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $T.rawQuery($Q, ...)
+              - pattern: $T.raw($Q, ...)
+              - pattern: $T.whereRaw($Q, ...)
+              - pattern: $T.orderByRaw($Q, ...)
+              - pattern: $T.selectRaw($Q, ...)
+              - pattern: $T.havingRaw($Q, ...)
+              - pattern: $T.joinRaw($Q, ...)
+          - focus-metavariable: $Q
+    paths:
+      exclude:
+        - node_modules
+        - build
+        - tests

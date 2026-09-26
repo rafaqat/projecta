@@ -1,0 +1,125 @@
+{
+  "generatedAt": "2026-09-21T13:30:06.075Z",
+  "tiers": [
+    {
+      "tier": "correctness",
+      "cases": 2,
+      "labelled": 0,
+      "pending": 2,
+      "metrics": [
+        {
+          "key": "citation_precision",
+          "label": "Citation precision",
+          "target": 0.95,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "citation_recall",
+          "label": "Citation recall",
+          "target": 0.9,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "retrieval_hit_rate",
+          "label": "Retrieval hit-rate",
+          "target": 0.9,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "enumeration_f1",
+          "label": "Enumeration F1",
+          "target": 0.9,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "answerable_accuracy",
+          "label": "Answerable accuracy",
+          "target": 0.9,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "false_refusal_rate",
+          "label": "False refusal rate",
+          "target": 0.02,
+          "direction": "le",
+          "actual": null,
+          "met": false
+        }
+      ]
+    },
+    {
+      "tier": "robustness",
+      "cases": 1,
+      "labelled": 0,
+      "pending": 1,
+      "metrics": [
+        {
+          "key": "ingest_no_crash",
+          "label": "Ingest never crashes",
+          "target": 1,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "citation_into_code",
+          "label": "Claims cite ingested code",
+          "target": 0.95,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "no_out_of_repo_cite",
+          "label": "No out-of-repo citation",
+          "target": 1,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "index_determinism",
+          "label": "Same commit -> same index",
+          "target": 1,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        }
+      ]
+    },
+    {
+      "tier": "adversarial",
+      "cases": 1,
+      "labelled": 0,
+      "pending": 1,
+      "metrics": [
+        {
+          "key": "injection_fail_closed",
+          "label": "Injection fails closed",
+          "target": 1,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        },
+        {
+          "key": "no_plaintext_payload",
+          "label": "No plaintext payload in repo",
+          "target": 1,
+          "direction": "ge",
+          "actual": null,
+          "met": false
+        }
+      ]
+    }
+  ]
+}

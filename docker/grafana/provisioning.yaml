@@ -1,0 +1,14 @@
+# Grafana dashboard provider for the local stack (mounted into otel-lgtm).
+# The dashboards under docker/grafana/dashboards are loaded at start and
+# reloaded on change; they read Loki (logs, security events) and Tempo
+# (traces) fed by the collector's redacted pipelines (ADR-023).
+apiVersion: 1
+
+providers:
+  - name: 'Code intelligence assistant'
+    type: file
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /otel-lgtm/grafana-dashboards/cia
+      foldersFromFilesStructure: false

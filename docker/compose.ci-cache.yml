@@ -1,0 +1,66 @@
+# CI overlay: BuildKit layer cache in the GitHub Container Registry, one ref per service
+# (ADR-027 build; owner 2026-09-15). Layers are keyed by content, so a run that changed only
+# application code rebuilds only the stages after it. Needs a buildx builder that can export
+# a registry cache (docker/setup-buildx-action) and a login with packages:write.
+# Usage: COMPOSE_FILE=docker/compose.yml:docker/compose.ci-cache.yml CACHE_REF=ghcr.io/<owner>/<repo>/buildcache
+services:
+  dns:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:dns
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:dns,mode=max
+  postgres:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:postgres
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:postgres,mode=max
+  llm-gateway:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:llm-gateway
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:llm-gateway,mode=max
+  ingress:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:ingress
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:ingress,mode=max
+  cost-reconciler:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:cost-reconciler
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:cost-reconciler,mode=max
+  audit-writer:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:audit-writer
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:audit-writer,mode=max
+  provider-stub:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:provider-stub
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:provider-stub,mode=max
+  mock-oidc:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:mock-oidc
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:mock-oidc,mode=max
+  web:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:web
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:web,mode=max
+  worker:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:worker
+      cache_to:
+        - type=registry,ref=${CACHE_REF}:worker,mode=max

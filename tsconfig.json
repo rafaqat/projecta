@@ -1,0 +1,22 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "jsx": "react",
+    "outDir": "./build",
+    "strict": true
+  },
+  "references": [
+    {
+      "path": "./tsconfig.inertia.json"
+    }
+  ],
+  "exclude": [
+    "${configDir}/inertia/**",
+    "${configDir}/node_modules/**",
+    "${configDir}/build/**",
+    "${configDir}/tests/fixtures/**",
+    "${configDir}/evals/fixtures/**",
+    "${configDir}/tmp/**"
+  ]
+}

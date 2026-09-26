@@ -1,0 +1,11 @@
+{
+  "description": "Modules (extension-less paths) that exist only in *-test image targets (ADR-020). The production build manifest must list none of them, and production boot refuses to start if one is present.",
+  "modules": [
+    "tests/bootstrap",
+    "tests/reporters/tagged",
+    "app/auth/mock_oidc",
+    "app/llm/fake_model",
+    "app/security/ablations",
+    "services/mock-oidc/src/server"
+  ]
+}

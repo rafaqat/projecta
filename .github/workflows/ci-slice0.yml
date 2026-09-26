@@ -1,0 +1,180 @@
+name: ci-slice0
+
+# Runs on every branch so each slice tag/branch validates independently.
+on:
+  push:
+  pull_request:
+
+# Slice 3 adds the LLM gateway boundary (ADR-034): the app requires a gateway base URL and token
+# at boot. Provided workflow-wide so every job that boots the app validates it.
+# Telemetry (ADR-023): config/otel.ts builds the OTLP exporters when it loads, so a valid
+# endpoint must be present at boot even though nothing collects on it in CI (the batch exporter
+# drops what it cannot deliver). Matches the committed .env.example, which CI copies before boot.
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+  LLM_GATEWAY_TOKEN: test-gateway-token
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4317
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  constitution:
+    name: constitution checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Required frame files exist
+        run: |
+          set -euo pipefail
+          for f in LICENSE docs/methodology.md docs/roadmap.md evals/README.md \
+                   docs/adr/index.md docs/adr/template.md; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+      - name: Every ADR is listed in the index
+        run: |
+          set -euo pipefail
+          status=0
+          for adr in docs/adr/[0-9]*.md; do
+            base="$(basename "$adr")"
+            grep -q "$base" docs/adr/index.md || { echo "::error::$base not in index"; status=1; }
+          done
+          exit $status
+      - name: No accepted ADR was edited in this PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD -- 'docs/adr/[0-9]*.md' || true)"
+          fail=0
+          for f in $changed; do
+            test -f "$f" || continue
+            if grep -qi '^status: accepted' "$f" && ! git diff "$BASE_SHA"...HEAD -- "$f" | grep -qiE '^\+status: accepted'; then
+              echo "::error::accepted ADR modified: $f"; fail=1
+            fi
+          done
+          exit $fail
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - run: npm run typecheck
+
+  evals:
+    name: evals (red by design)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm run evals
+      - run: npm run test:evals
+
+  substrate:
+    name: substrate — the model works (scripted LLM seam + embedder on pinned weights)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: development
+      HOST: localhost
+      PORT: '4444'
+      LOG_LEVEL: info
+      APP_KEY: ${{ github.sha }} # boot only; nothing is encrypted with it here
+      APP_URL: http://localhost:4444
+      APP_ENV: test
+      APP_NAME: projectA
+      APP_VERSION: 0.0.0
+      OIDC_ISSUER: http://127.0.0.1:9100
+      OIDC_ALLOWED_ISSUERS: http://127.0.0.1:9100
+      OIDC_CLIENT_ID: projectA
+      OIDC_CLIENT_SECRET: test-client-secret
+      OIDC_ALLOWED_TENANTS: tenant-local
+      SESSION_DRIVER: database
+      GIT_ALLOWED_HOSTS: github.com
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USER: app
+      DB_PASSWORD: app
+      DB_DATABASE: app_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - name: Build Postgres (pgvector + pg_textsearch) — the global test migrate needs it
+        run: docker build --build-arg TARGETARCH=amd64 -f docker/postgres/Dockerfile -t pa-postgres:ci .
+      - name: Start Postgres (init.sql bakes the app role, databases, and extensions)
+        run: |
+          docker run -d --name pgts \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=app \
+            -p 5432:5432 pa-postgres:ci
+      - name: Wait until Postgres and init.sql are ready
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if PGPASSWORD=postgres pg_isready -h localhost -U postgres -d app >/dev/null 2>&1 \
+               && PGPASSWORD=postgres psql -h localhost -U postgres -d app_test -c 'select 1' >/dev/null 2>&1; then
+              echo "postgres ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready"; docker logs pgts; exit 1
+      - name: Cache the pinned model weights, keyed by models.lock.json (SEC-24)
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: models
+          key: models-${{ hashFiles('models.lock.json') }}
+      - name: Fetch pinned weights — SHA-verified, ONNX runtime only (no torch/.py, ADR-040)
+        run: MODELS_RUNTIME=onnx node scripts/fetch-models.mjs
+      - name: The model works — scripted LLM seam + embedder on the pinned weights (unit)
+        run: node test.js --suite unit --files model
+
+  compiled-build:
+    name: compiled production build (make up's image path)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      # Exactly docker/Dockerfile's build stage: the compiled app + every service image `make up`
+      # boots. Dev-mode (serve.js/ts-exec) never exercises this compiled path; this job does.
+      - name: node ace build + service builds (mirrors docker/Dockerfile)
+        run: |
+          set -euo pipefail
+          node ace.js build
+          rm -rf build/tests build/services build/scripts build/app/security/ablations.js
+          node scripts/build-manifest.mjs build build/build-manifest.json production
+          cp test-modules.json build/test-modules.json
+          for svc in llm-gateway audit-writer cost-reconciler mock-oidc provider-stub git-fixture; do
+            npx tsc -p services/$svc/tsconfig.json
+          done
+          test -f build/bin/server.js || { echo "::error::build/bin/server.js missing after ace build"; exit 1; }

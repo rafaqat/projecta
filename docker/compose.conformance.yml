@@ -1,0 +1,36 @@
+# Overlay for `make conformance` (WP-17): a git fixture served over TLS on the
+# test profile, trusted by the worker through a shared CA volume, and the
+# allowlist pointed at it. Layered over compose.yml with a second -f; the
+# production shape of compose.yml is untouched.
+services:
+  git-fixture:
+    profiles: [test]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: git-fixture
+    environment:
+      PORT: '8443'
+      SERVICE_HOST: git-fixture
+      CA_DIR: /fixture-ca
+    volumes:
+      - fixture-ca:/fixture-ca
+    networks: [internal]
+
+  web:
+    environment:
+      GIT_ALLOWED_HOSTS: git-fixture:8443
+
+  worker:
+    environment:
+      GIT_ALLOWED_HOSTS: git-fixture:8443
+      GIT_SSL_CAINFO: /fixture-ca/cert.pem
+      NO_PROXY: postgres,llm-gateway,otel-collector,azurite,mock-oidc,provider-stub,git-fixture,keycloak,localhost,127.0.0.1
+    volumes:
+      - fixture-ca:/fixture-ca:ro
+    depends_on:
+      git-fixture:
+        condition: service_healthy
+
+volumes:
+  fixture-ca:

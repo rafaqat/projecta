@@ -1,0 +1,33 @@
+# gitleaks configuration. The default ruleset applies. Scanner fixtures are
+# generated at test time in a temporary directory, so no seeded secret is
+# ever committed (INV-19 spirit). The allowlisted regexes are test canaries
+# (strings that must NOT appear in responses), reviewed and named here.
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  '''package-lock\.json''',
+]
+regexes = [
+  # Azurite's published development account key (Microsoft docs); not a secret.
+  '''Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==''',
+  '''SECRET-DETAIL-9f1c''',
+  '''DETAIL-CANARY-9f1c''',
+  '''BODY-CANARY-3c9a''',
+  # Red-team canaries (WP-10, ADR-013): a fake AWS-shaped credential inside the base64
+  # seeds/variants (gitleaks decodes base64) and the foreign-workspace honeytoken fixture.
+  # Both are values the gateway must block, never real credentials.
+  '''AKIAQ7B5D2ZC3X4Y5Z6A''',
+  '''HT-0123456789abcdef01234567''',
+  # Amazon's documented example access key ID (docs.aws.amazon.com), in the WP-19 lookalikes
+  # fixture as a benign value the redactor must be measured against; it opens nothing.
+  '''AKIAIOSFODNN7EXAMPLE''',
+  # A metric identifier in the eval harness (evals/harness/metrics.ts, evals/baselines/*.json):
+  # a field literally named `key` whose value is a metric name, not a credential.
+  '''enumeration_f1''',
+  # The throwaway APP_KEY used by CI test jobs. HEAD now sets APP_KEY from ${{ github.sha }}
+  # (matching release.yml); this literal survives only in pre-cleanup history, is boot-only,
+  # and encrypts nothing persistent. Remove this entry after the clean-history re-fold.
+  '''w8kL2pQ7rT4vX1zB5nM0jH3gD6sF9aC2''',
+]
