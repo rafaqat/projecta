@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Cx0BB4qO.js";var t=e();function n({correlationId:e}){return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(`h1`,{children:`Something went wrong`}),e?(0,t.jsxs)(`p`,{children:[`Quote this reference when reporting the problem: `,(0,t.jsx)(`code`,{children:e})]}):null]})}export{n as default};

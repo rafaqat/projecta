@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{{-- Dark is the default scheme; the light preference is a plain cookie the toggle sets (ADR-036). Only the boolean reaches the markup. --}}
+@let(light = request.plainCookie('scheme', { encoded: false }) === 'light')
+<html{{{ light ? ' class="light"' : '' }}}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {{-- Vite's dev client applies this nonce to the styles it injects, so dev pages satisfy the CSP (ADR-028). --}}
+    <meta property="csp-nonce" nonce="{{ cspNonce }}" />
+    <title data-inertia>
+      Code evidence
+    </title>
+
+    @viteReactRefresh({ nonce: cspNonce })
+    @vite(['inertia/app.tsx'], { nonce: cspNonce })
+    @inertiaHead()
+    @stack('dumper')
+  </head>
+
+  <body>
+    @inertia()
+  </body>
+
+</html>
