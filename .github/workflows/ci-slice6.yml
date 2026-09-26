@@ -1,0 +1,37 @@
+name: ci-slice6
+
+# Runs on every branch so each slice tag/branch validates independently.
+on:
+  push:
+  pull_request:
+
+# Slice 3 adds the LLM gateway boundary (ADR-034): the app requires a gateway base URL and token
+# at boot. Provided workflow-wide so every job that boots the app validates it.
+# Telemetry (ADR-023): config/otel.ts builds the OTLP exporters when it loads, so a valid
+# endpoint must be present at boot even though nothing collects on it in CI (the batch exporter
+# drops what it cannot deliver). Matches the committed .env.example, which CI copies before boot.
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+  LLM_GATEWAY_TOKEN: test-gateway-token
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4317
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bicep:
+    name: azure bicep compiles
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compile the Azure Bicep (ADR-0004)
+        run: az bicep build --file infra/azure/main.bicep --outfile /tmp/main.json
+      - name: Show the ARM the Bicep produced
+        run: head -20 /tmp/main.json
