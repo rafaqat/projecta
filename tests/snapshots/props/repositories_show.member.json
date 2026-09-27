@@ -1,0 +1,38 @@
+{
+  "component": "repositories/show",
+  "props": {
+    "canManage": false,
+    "assetsVersion": "<assets-version>",
+    "errors": {},
+    "ingest": {
+      "ignorePaths": null,
+      "ignoreIsDefault": true,
+      "files": null,
+      "status": "registered",
+      "statusDetail": null,
+      "defaultRef": "main",
+      "queued": false,
+      "jobState": null,
+      "retryCount": 0,
+      "flaggedChunks": [],
+      "queue": null,
+      "activeCommit": null,
+      "steps": []
+    },
+    "user": {
+      "fullName": "A member",
+      "email": "<email>",
+      "initials": "AM"
+    },
+    "workspace": {
+      "handle": "<workspace-handle>",
+      "name": "Workspace a"
+    },
+    "repository": {
+      "handle": "<open-handle>",
+      "name": "a-open",
+      "url": "https://github.com/example/open",
+      "visibility": "workspace"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "component": "workspaces/show",
+  "props": {
+    "canManage": true,
+    "errors": {},
+    "user": {
+      "fullName": "A owner",
+      "email": "<email>",
+      "initials": "AO"
+    },
+    "workspace": {
+      "handle": "<workspace-handle>",
+      "name": "Workspace a"
+    },
+    "repositories": [
+      {
+        "handle": "<open-handle>",
+        "name": "a-open",
+        "url": "https://github.com/example/open",
+        "visibility": "workspace"
+      },
+      {
+        "handle": "<restricted-handle>",
+        "name": "a-restricted",
+        "url": "https://github.com/example/restricted",
+        "visibility": "restricted"
+      }
+    ]
+  }
+}

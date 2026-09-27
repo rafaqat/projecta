@@ -1,0 +1,17 @@
+{
+  "component": "workspaces/index",
+  "props": {
+    "errors": {},
+    "user": {
+      "fullName": "A member",
+      "email": "<email>",
+      "initials": "AM"
+    },
+    "workspaces": [
+      {
+        "handle": "<workspace-handle>",
+        "name": "Workspace a"
+      }
+    ]
+  }
+}
