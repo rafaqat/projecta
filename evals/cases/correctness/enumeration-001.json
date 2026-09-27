@@ -1,0 +1,18 @@
+{
+  "id": "enumeration-001",
+  "tier": "correctness",
+  "fixture": "node-express-shop",
+  "question": "List every HTTP endpoint the app exposes.",
+  "oracle": {
+    "kind": "enumeration",
+    "of": "endpoints",
+    "expected": [
+      "GET /health",
+      "GET /api/products",
+      "GET /api/products/:sku",
+      "POST /api/orders",
+      "POST /api/orders/:orderId/refund"
+    ]
+  },
+  "labelled_by": "Rafaqat"
+}

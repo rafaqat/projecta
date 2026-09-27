@@ -1,0 +1,428 @@
+# Local stack (ADR-001, ADR-010, ADR-020, ADR-023; design §2 and §14).
+#
+# Networks: `internal` has no route to the internet and its application
+# containers use a resolver that answers only service names. `egress` is the
+# bridge to the outside; only llm-gateway and squid sit on it. Published
+# ports go through the `ingress` sidecar: application containers are never
+# attached to a network that can publish ports, because Docker Desktop
+# ignores the bridge's masquerade setting and such a network is a route out.
+#
+# Profiles: `test` adds the mock OIDC provider; `keycloak` adds a local
+# Keycloak realm (real OIDC software, design §14's open-source stand-in for
+# Entra ID; `make up PROFILES=test,keycloak`). Neither exists in production
+# images. Select the identity provider the app uses with OIDC_ISSUER_LOCAL in
+# .env (default: the mock).
+
+name: cia
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_ENV: local
+  HOST: 0.0.0.0
+  PORT: '3333'
+  LOG_LEVEL: info
+  SESSION_DRIVER: database
+  APP_URL: http://localhost:3333
+  DB_HOST: postgres
+  DB_PORT: '5432'
+  DB_USER: app
+  DB_PASSWORD: app
+  DB_DATABASE: app
+  OIDC_ISSUER: ${OIDC_ISSUER_LOCAL:-http://mock-oidc:9000}
+  OIDC_ALLOWED_ISSUERS: ${OIDC_ISSUER_LOCAL:-http://mock-oidc:9000}
+  OIDC_CLIENT_ID: code-intelligence-assistant
+  OIDC_CLIENT_SECRET: local-dev-client-secret
+  OIDC_ALLOWED_TENANTS: tenant-local
+  ANTHROPIC_BASE_URL: http://llm-gateway:8787
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  GIT_ALLOWED_HOSTS: github.com
+  INJECTION_DETECTOR_MODEL: ${INJECTION_DETECTOR_MODEL:-protectai/deberta-v3-base-prompt-injection-v2}
+  # ADR-069: the share of turns carrying a compliance canary. Unset is off; a deployment that
+  # measures how often the model follows an instruction in its evidence sets it (README says so).
+  CANARY_SAMPLE_RATE: ${CANARY_SAMPLE_RATE:-}
+  HONEYTOKEN_HMAC_KEY: ${HONEYTOKEN_HMAC_KEY:-local-honeytoken-key}
+  # Tier 1/3 dependency fetches (ADR-009): registry allowlist, and Node's built-in https must use the forward proxy.
+  DEPENDENCY_REGISTRIES: ${DEPENDENCY_REGISTRIES:-https://registry.npmjs.org}
+  NODE_USE_ENV_PROXY: '1'
+  HTTPS_PROXY: http://squid:3128
+  NO_PROXY: postgres,llm-gateway,otel-collector,azurite,mock-oidc,provider-stub,keycloak,localhost,127.0.0.1
+  # ADR-040: the model server on the host's GPU. The `internal` network has no route to the host;
+  # requests go through Squid, which allows only host.docker.internal:8765 (squid.conf).
+  # Unset, the embedder and the classifier run in-process.
+  HTTP_PROXY: http://squid:3128
+  MODEL_SERVER_URL: ${MODEL_SERVER_URL:-}
+
+services:
+  dns:
+    build:
+      context: ..
+      dockerfile: docker/dns/Dockerfile
+    networks:
+      internal:
+        ipv4_address: 172.28.0.53
+    healthcheck:
+      test: ['CMD', 'nslookup', 'postgres', '127.0.0.1']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    build:
+      context: ..
+      dockerfile: docker/postgres/Dockerfile
+    # pg_textsearch's shared-memory memtable cache leaks its budget on REINDEX and DROP
+    # (timescale/pg_textsearch #470, #486) and, after the delete churn of a long test job,
+    # failed queries in CI with "memtable record ... extends past free_offset". Queries read
+    # the on-disk structure instead; correctness is unchanged.
+    # The image's CMD preloads pg_textsearch; an override must repeat it (CI 34902012746).
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_textsearch
+      - -c
+      - pg_textsearch.memtable_cache_enabled=off
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d app']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck --loose
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z 127.0.0.1 10000 || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - azurite-data:/data
+
+  otel-lgtm:
+    image: grafana/otel-lgtm@sha256:475319e883b66594d1a2f22ef168c2459802bb94548e6f25d9782bd5f5c19a3a
+    networks: [internal]
+    # The stack's own Grafana dashboard: logs and security events (Loki), traces (Tempo).
+    volumes:
+      - ./grafana/provisioning.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/cia.yaml:ro
+      - ./grafana/dashboards:/otel-lgtm/grafana-dashboards/cia:ro
+      # Loki, Tempo, Prometheus and Grafana state survive a recreate (removed by `make down`).
+      - otel-lgtm-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://127.0.0.1:3000/api/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
+    command: ['--config=/etc/otelcol/collector.yaml']
+    volumes:
+      - ./otel/collector.yaml:/etc/otelcol/collector.yaml:ro
+      - ../tmp/otel:/var/lib/otel
+    networks: [internal]
+    # Distroless image: no shell for a healthcheck. Readiness is proven by
+    # the telemetry canary test instead.
+    depends_on:
+      otel-lgtm:
+        condition: service_started
+
+  squid:
+    image: ubuntu/squid@sha256:6a097f68bae708cedbabd6188d68c7e2e7a38cedd05a176e1cc0ba29e3bbe029
+    volumes:
+      - ./squid/squid.conf:/etc/squid/squid.conf:ro
+    # The model server on the host (ADR-040): host.docker.internal, which Docker Desktop resolves;
+    # a Linux engine needs the mapping. Squid resolves it through the resolver (squid.conf).
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks: [internal, egress]
+    healthcheck:
+      test: ['CMD-SHELL', 'squid -k check || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Signs the gateway policy for THIS stack's APP_KEY on every `up`, into a shared volume the gateway
+  # reads — so a rebuilt or recreated app never signs attribution a stale policy can't verify, and no
+  # manual `make policy` is needed after a docker rebuild. attributionKeys derive from APP_KEY and the
+  # configHash from the built prompts/profiles, so a fresh sign always matches the running app.
+  # Production signs through the protected release workflow (ADR-024, WP-14), not this service.
+  gateway-policy:
+    image: cia-web
+    pull_policy: never
+    # Writes the signed policy into the root-owned named volume; the gateway reads it as its own
+    # non-root user (the files are world-readable). This init container is ephemeral and unexposed.
+    user: root
+    command: ['node', 'ace', 'gateway:policy', '--out', '/policy/gateway-policy.json']
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-env
+      # This service alone needs GATEWAY_POLICY_SEED (kept from env_file) to sign; the other
+      # components' secrets are blanked so it never sees them (ADR-025).
+      AUDIT_SIGNING_SEED: ''
+      ANTHROPIC_ADMIN_KEY: ''
+      ANTHROPIC_API_KEY: ''
+    volumes:
+      - gateway-policy:/policy
+    networks: [internal]
+    dns: [172.28.0.53]
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  llm-gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: llm-gateway
+    restart: unless-stopped
+    environment:
+      GATEWAY_PORT: '8787'
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      UPSTREAM_BASE_URL: ${UPSTREAM_BASE_URL:-https://api.anthropic.com}
+      # Signed for this stack's APP_KEY by the gateway-policy init service on every `up` (above), into
+      # the shared /policy volume; the release workflow signs it in production (ADR-024).
+      GATEWAY_POLICY_PATH: /policy/gateway-policy.json
+      GATEWAY_POLICY_PUBLIC_KEY: ${GATEWAY_POLICY_PUBLIC_KEY:?run make policy}
+      GATEWAY_DATABASE_URL: postgres://gateway:gateway@postgres:5432/app
+      HONEYTOKEN_HMAC_KEY: ${HONEYTOKEN_HMAC_KEY:-local-honeytoken-key}
+    volumes:
+      - gateway-policy:/policy:ro
+    networks: [internal, egress]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      gateway-policy:
+        condition: service_completed_successfully
+
+  ingress:
+    build:
+      context: ..
+      dockerfile: docker/ingress/Dockerfile
+    environment:
+      FORWARDS: 3333:web:3333 5432:postgres:5432 3000:otel-lgtm:3000 9000:mock-oidc:9000 8080:keycloak:8080
+    ports:
+      - '127.0.0.1:3333:3333'
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
+      - '127.0.0.1:3000:3000'
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:8080:8080'
+    networks: [internal, ingress]
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z 127.0.0.1 3333 && nc -z 127.0.0.1 5432']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # The only holder of a provider Admin key or Cost Management identity, and of the
+  # cost_reconciler role (ADR-038). Holds no inference credential; idles until a source is set.
+  cost-reconciler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: cost-reconciler
+    restart: unless-stopped
+    networks: [internal]
+    dns: [172.28.0.53]
+    environment:
+      COST_RECONCILER_DATABASE_URL: postgres://cost_reconciler:cost@postgres:5432/app
+      COST_ENVIRONMENT: ${APP_ENV:-local}
+      COST_PRICES_PATH: /app/config/prices.json
+      ANTHROPIC_ADMIN_KEY: ${ANTHROPIC_ADMIN_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  audit-writer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: audit-writer
+    restart: unless-stopped
+    networks: [internal]
+    dns: [172.28.0.53]
+    environment:
+      AUDIT_WRITER_DATABASE_URL: postgres://audit_writer:audit@postgres:5432/app
+      AUDIT_SIGNING_SEED: ${AUDIT_SIGNING_SEED}
+      AZURE_STORAGE_CONNECTION_STRING: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # Scripted Messages API upstream for `make conformance` (WP-17): set
+  # UPSTREAM_BASE_URL=http://provider-stub:9200 so the gateway routes to it.
+  provider-stub:
+    profiles: [test]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: provider-stub
+    environment:
+      PORT: '9200'
+      FAIL_EVERY: ${PROVIDER_STUB_FAIL_EVERY:-0}
+    networks: [internal]
+
+  mock-oidc:
+    profiles: [test]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: mock-oidc
+    environment:
+      PORT: '9000'
+      ISSUER: http://mock-oidc:9000
+      OIDC_CLIENT_ID: code-intelligence-assistant
+      OIDC_CLIENT_SECRET: local-dev-client-secret
+    networks: [internal]
+
+  # One-shot migration job, run before web and worker start (design §14).
+  # Runs the web image (same target, same layers): naming it instead of
+  # building it again spares one export of the 3 GB image per `make build`.
+  migrate:
+    image: cia-web
+    pull_policy: never
+    command: ['node', 'ace', 'migration:run', '--force']
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-env
+      # .env holds secrets that belong to other components; env_file would hand this service all of
+      # them, so they are blanked here — environment overrides env_file (ADR-025, ADR-072, AC-WP26-04).
+      AUDIT_SIGNING_SEED: ''
+      GATEWAY_POLICY_SEED: ''
+      ANTHROPIC_ADMIN_KEY: ''
+    networks: [internal]
+    dns: [172.28.0.53]
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  keycloak:
+    profiles: [keycloak]
+    image: quay.io/keycloak/keycloak@sha256:ff4257d0d64efbe99ed1ddfaf07765cc3c36dc7518bf8324d41961327f441c54
+    command: ['start-dev', '--import-realm']
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://keycloak:8080
+      KC_HTTP_ENABLED: 'true'
+      KC_HEALTH_ENABLED: 'true'
+    volumes:
+      - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
+    networks: [internal]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q UP <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  web:
+    image: cia-web
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: web
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-env
+      # .env holds secrets that belong to other components; env_file would hand this service all of
+      # them, so they are blanked here — environment overrides env_file (ADR-025, ADR-072, AC-WP26-04).
+      AUDIT_SIGNING_SEED: ''
+      GATEWAY_POLICY_SEED: ''
+      ANTHROPIC_ADMIN_KEY: ''
+    networks: [internal]
+    dns: [172.28.0.53]
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      llm-gateway:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  # Hardened per ADR-019: read-only root filesystem, tmpfs scratch for the
+  # bare repositories, no privilege escalation; the image runs as `node`.
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: worker
+    # The models make the worker the largest process; an out-of-memory kill must not leave
+    # the queue unattended (UAT 2026-09-14: jobs sat "created" while the worker was gone).
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-env
+      # .env holds secrets that belong to other components; env_file would hand this service all of
+      # them, so they are blanked here — environment overrides env_file (ADR-025, ADR-072, AC-WP26-04).
+      AUDIT_SIGNING_SEED: ''
+      GATEWAY_POLICY_SEED: ''
+      ANTHROPIC_ADMIN_KEY: ''
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    networks: [internal]
+    dns: [172.28.0.53]
+    depends_on:
+      dns:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+
+networks:
+  internal:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+  ingress:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+  egress:
+
+volumes:
+  postgres-data:
+  azurite-data:
+  otel-lgtm-data:
+  # The gateway policy the gateway-policy init service signs each `up`; the gateway reads it read-only.
+  gateway-policy:

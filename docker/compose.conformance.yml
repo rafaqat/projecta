@@ -1,0 +1,46 @@
+# Overlay for `make conformance` (WP-17): a git fixture served over TLS on the
+# test profile, trusted by the worker through a shared CA volume, and the
+# allowlist pointed at it. Layered over compose.yml with a second -f; the
+# production shape of compose.yml is untouched.
+services:
+  git-fixture:
+    profiles: [test]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: git-fixture
+    environment:
+      PORT: '8443'
+      SERVICE_HOST: git-fixture
+      CA_DIR: /fixture-ca
+    volumes:
+      - fixture-ca:/fixture-ca
+    networks: [internal]
+
+  # The registration pre-flight (ADR-0020) does an ls-remote from the web service, so web now needs
+  # the same fixture trust the worker has always had: the shared CA for the self-signed cert, and a
+  # NO_PROXY bypass so git does not tunnel git-fixture:8443 through Squid (which denies non-443 CONNECT).
+  web:
+    environment:
+      GIT_ALLOWED_HOSTS: git-fixture:8443
+      GIT_SSL_CAINFO: /fixture-ca/cert.pem
+      NO_PROXY: postgres,llm-gateway,otel-collector,azurite,mock-oidc,provider-stub,git-fixture,keycloak,localhost,127.0.0.1
+    volumes:
+      - fixture-ca:/fixture-ca:ro
+    depends_on:
+      git-fixture:
+        condition: service_healthy
+
+  worker:
+    environment:
+      GIT_ALLOWED_HOSTS: git-fixture:8443
+      GIT_SSL_CAINFO: /fixture-ca/cert.pem
+      NO_PROXY: postgres,llm-gateway,otel-collector,azurite,mock-oidc,provider-stub,git-fixture,keycloak,localhost,127.0.0.1
+    volumes:
+      - fixture-ca:/fixture-ca:ro
+    depends_on:
+      git-fixture:
+        condition: service_healthy
+
+volumes:
+  fixture-ca:

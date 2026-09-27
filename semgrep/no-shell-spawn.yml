@@ -1,0 +1,17 @@
+rules:
+  - id: no-shell-spawn
+    message: Child processes must be spawned without a shell; git receives an argument vector (ADR-019, INV-11)
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: "$F(..., { ..., shell: true, ... })"
+          - pattern: "$F(..., { ..., shell: $S, ... })"
+          - pattern: "exec($CMD, ...)"
+          - pattern: "execSync($CMD, ...)"
+          - pattern: "child_process.exec($CMD, ...)"
+          - pattern: "child_process.execSync($CMD, ...)"
+    paths:
+      exclude:
+        - node_modules
+        - build

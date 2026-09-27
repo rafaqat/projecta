@@ -1,0 +1,46 @@
+# CI overlay, read-only: the same BuildKit layer cache as docker/compose.ci-cache.yml, taken
+# from and never written. For jobs that build but have no reason to write the cache main's
+# builds trust — the nightly robustness tier runs with packages:read (ADR-027 least privilege).
+# tests/structural/ci/cache_permissions.spec.ts keeps its services in step with the writing overlay.
+# Usage: COMPOSE_EXTRA='-f docker/compose.ci-cache-read.yml' CACHE_REF=ghcr.io/<owner>/<repo>/buildcache
+services:
+  dns:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:dns
+  postgres:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:postgres
+  llm-gateway:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:llm-gateway
+  ingress:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:ingress
+  cost-reconciler:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:cost-reconciler
+  audit-writer:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:audit-writer
+  provider-stub:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:provider-stub
+  mock-oidc:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:mock-oidc
+  web:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:web
+  worker:
+    build:
+      cache_from:
+        - type=registry,ref=${CACHE_REF}:worker

@@ -1,0 +1,154 @@
+name: ci-slice0
+
+# Runs on every branch so each slice tag/branch validates independently.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Slice 3 adds the LLM gateway boundary (ADR-034): the app requires a gateway base URL and token
+# at boot. Provided workflow-wide so every job that boots the app validates it.
+# Telemetry (ADR-023): config/otel.ts builds the OTLP exporters when it loads, so a valid
+# endpoint must be present at boot even though nothing collects on it in CI (the batch exporter
+# drops what it cannot deliver). Matches the committed .env.example, which CI copies before boot.
+env:
+  INJECTION_DETECTOR_MODEL: protectai/deberta-v3-base-prompt-injection-v2
+  ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+  LLM_GATEWAY_TOKEN: test-gateway-token
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4317
+
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  constitution:
+    name: constitution checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Required frame files exist
+        run: |
+          set -euo pipefail
+          for f in LICENSE docs/methodology.md docs/roadmap.md evals/README.md \
+                   docs/adr/index.md docs/adr/template.md; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+      - name: Every workflow test filter matches files, not a directory
+        run: node scripts/check-test-filters.mjs
+      - name: Every ADR is listed in the index
+        run: |
+          set -euo pipefail
+          status=0
+          for adr in docs/adr/[0-9]*.md; do
+            base="$(basename "$adr")"
+            grep -q "$base" docs/adr/index.md || { echo "::error::$base not in index"; status=1; }
+          done
+          exit $status
+      - name: No accepted ADR was edited in this PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD -- 'docs/adr/[0-9]*.md' || true)"
+          fail=0
+          for f in $changed; do
+            test -f "$f" || continue
+            if grep -qi '^status: accepted' "$f" && ! git diff "$BASE_SHA"...HEAD -- "$f" | grep -qiE '^\+status: accepted'; then
+              echo "::error::accepted ADR modified: $f"; fail=1
+            fi
+          done
+          exit $fail
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      - run: npm run typecheck
+
+  evals:
+    name: evals (red by design)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm run evals
+      - run: npm run test:evals
+
+  compiled-build:
+    name: compiled production build (make up's image path)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with: { node-version: 24 }
+      - run: npm ci
+      # Exactly docker/Dockerfile's build stage: the compiled app + every service image `make up`
+      # boots. Dev-mode (serve.js/ts-exec) never exercises this compiled path; this job does.
+      - name: node ace build + service builds (mirrors docker/Dockerfile)
+        run: |
+          set -euo pipefail
+          # `node ace build` bundles the frontend through the vite provider's build hook. The web UI
+          # arrives in its own slice, so a slice that carries no vite config compiles the backend only:
+          # it still proves this slice's TypeScript builds into a runnable server, which is the point of
+          # this job. main carries the frontend and takes the full path.
+          if [ -f vite.config.ts ]; then
+            node ace.js build
+          else
+            echo "no frontend in this slice: compiling the backend only"
+            npx tsc -p tsconfig.json
+            cp package.json build/package.json
+            # `node ace build` emits this entry too; the compose services start with `node ace`,
+            # so without it a container exits on `Cannot find module '/app/ace'`.
+            printf 'await import("./bin/console.js")\n' > build/ace.js
+            # The prompts, policies and views the app opens by path; `node ace build` copies them.
+            node --import=@poppinss/ts-exec scripts/copy-meta-files.mjs build
+          fi
+          rm -rf build/tests build/services build/scripts build/app/security/ablations.js
+          node scripts/build-manifest.mjs build build/build-manifest.json production
+          cp test-modules.json build/test-modules.json
+          # Compile the services this tree actually carries: the sidecars arrive with the gateway
+          # slice, so an earlier slice builds its own app and skips what it has not introduced yet.
+          # main carries all of them and still builds every one.
+          for svc in llm-gateway audit-writer cost-reconciler mock-oidc provider-stub git-fixture; do
+            [ -f "services/$svc/tsconfig.json" ] || { echo "skip services/$svc (not in this slice)"; continue; }
+            npx tsc -p services/$svc/tsconfig.json
+          done
+          # Both entries the running stack starts from: the server, and the ace file the
+          # migrate and gateway-policy services invoke.
+          for entry in build/bin/server.js build/ace.js; do
+            test -f "$entry" || { echo "::error::$entry missing after the build"; exit 1; }
+          done
+      - name: TruffleHog — secret scan of the compiled image payload
+        run: |
+          set -euo pipefail
+          scripts/install-trufflehog.sh
+          # Scan exactly what docker/Dockerfile ships. This catches a secret baked into the compiled
+          # output, a surface the git-history scan (gitleaks in ci-scan) does not cover. `unverified` is
+          # included deliberately: this runner has no provider egress to verify a hit, so a genuine
+          # leaked key here is reported as unverified, not verified — excluding it would make the scan
+          # toothless. Validated to produce zero findings on the current build/ (no false positives).
+          trufflehog filesystem build/ --results=verified,unverified,unknown --fail --no-update

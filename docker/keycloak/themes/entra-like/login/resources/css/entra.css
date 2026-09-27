@@ -1,0 +1,264 @@
+/* Entra-like sign-in: layout and type only; the parent theme keeps behaviour. */
+:root {
+  --el-blue: #0067b8;
+  --el-blue-hover: #005da6;
+  --el-text: #1b1b1b;
+  --el-muted: #605e5c;
+  --el-line: #666;
+  --el-bg: #f2f2f2;
+  --el-font: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont,
+    Roboto, 'Helvetica Neue', sans-serif;
+}
+
+html.login-pf,
+html.login-pf body {
+  height: 100%;
+}
+
+body.pf-v5-c-login,
+.pf-v5-c-login {
+  font-family: var(--el-font);
+  color: var(--el-text);
+  background: var(--el-bg) radial-gradient(ellipse at 20% 0%, #ffffff 0%, var(--el-bg) 55%) no-repeat;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  --pf-v5-c-login--BackgroundImage: none;
+}
+
+.pf-v5-c-login__container {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  padding: 0 16px;
+  grid-template-columns: none;
+}
+
+/* Brand line sits inside the card, top-left, like a tenant logo. */
+.pf-v5-c-login__header {
+  display: none;
+}
+
+.pf-v5-c-login__main {
+  background: #fff;
+  border-radius: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 44px;
+  margin: 0;
+  position: relative;
+}
+
+.pf-v5-c-login__main::before {
+  content: attr(data-brand);
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-blue);
+  letter-spacing: 0.01em;
+  margin-bottom: 20px;
+}
+
+.pf-v5-c-login__main-header {
+  padding: 0;
+}
+
+.pf-v5-c-title.pf-m-3xl,
+#kc-page-title {
+  font-family: var(--el-font);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+  margin: 0 0 16px;
+  color: var(--el-text);
+}
+
+.pf-v5-c-login__main-body {
+  padding: 0;
+}
+
+/* Underline inputs. */
+.pf-v5-c-form__label-text {
+  font-family: var(--el-font);
+  font-size: 15px;
+  color: var(--el-text);
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BorderRadius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--el-line);
+  background: transparent;
+  padding-left: 0;
+  font-family: var(--el-font);
+  font-size: 15px;
+}
+
+.pf-v5-c-form-control:focus-within,
+.pf-v5-c-form-control:hover {
+  border-bottom-color: var(--el-blue);
+  box-shadow: none;
+  outline: none;
+}
+
+.pf-v5-c-input-group {
+  border-bottom: 1px solid var(--el-line);
+}
+.pf-v5-c-input-group .pf-v5-c-form-control {
+  border-bottom: 0;
+}
+.pf-v5-c-input-group:focus-within {
+  border-bottom-color: var(--el-blue);
+}
+
+.pf-v5-c-check__label,
+.pf-v5-c-form__helper-text,
+.pf-v5-c-helper-text__item-text {
+  font-family: var(--el-font);
+  font-size: 13px;
+  color: var(--el-muted);
+}
+
+/* Primary action: solid blue, square, right-aligned; secondary is a text link. */
+.pf-v5-c-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--BorderRadius: 0;
+  background: var(--el-blue);
+  color: #fff;
+  font-family: var(--el-font);
+  font-size: 15px;
+  font-weight: 400;
+  min-width: 108px;
+  padding: 4px 12px;
+  height: 32px;
+}
+.pf-v5-c-button.pf-m-primary.pf-m-block {
+  display: inline-flex;
+  width: auto;
+}
+.pf-v5-c-button.pf-m-primary:hover,
+.pf-v5-c-button.pf-m-primary:focus {
+  background: var(--el-blue-hover);
+}
+
+a,
+.pf-v5-c-button.pf-m-link {
+  color: var(--el-blue);
+  font-family: var(--el-font);
+  font-size: 13px;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Footer band (register, forgot password) as quiet links below the card body. */
+.pf-v5-c-login__main-footer {
+  padding: 0;
+  margin-top: 24px;
+}
+.pf-v5-c-login__main-footer-band {
+  padding: 0;
+  justify-content: flex-start;
+}
+
+/* Alerts as a plain red line, as the provider does. */
+.pf-v5-c-alert.pf-m-inline {
+  --pf-v5-c-alert--BorderRadius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0 0 8px;
+}
+.pf-v5-c-alert.pf-m-danger .pf-v5-c-alert__title,
+.kc-feedback-text {
+  color: #e81123;
+  font-family: var(--el-font);
+  font-size: 13px;
+}
+.pf-v5-c-alert__icon {
+  display: none;
+}
+
+/* Language menu and dark-mode toggle are noise here. */
+.pf-v5-c-login__main-header-utilities,
+#kc-locale {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .pf-v5-c-login__main {
+    padding: 32px 24px;
+  }
+}
+
+/* Refinements after the first render. */
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-header::before,
+.pf-v5-c-login__main-header::after {
+  border: 0;
+  background: none;
+}
+.pf-v5-c-login__main {
+  border-top: 0;
+}
+.pf-v5-c-form__label-text,
+.pf-v5-c-form__label {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--el-muted);
+}
+.pf-v5-c-form-control,
+.pf-v5-c-form-control:focus,
+.pf-v5-c-form-control:focus-within,
+.pf-v5-c-form-control:focus-visible,
+.pf-v5-c-form-control input:focus {
+  --pf-v5-c-form-control--BorderWidth: 0;
+  --pf-v5-c-form-control--focus--OutlineOffset: 0;
+  --pf-v5-c-form-control--focus--OutlineWidth: 0;
+  --pf-v5-c-form-control--focus--BorderBottomWidth: 0;
+  outline: 0 !important;
+  box-shadow: none !important;
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  background-color: transparent;
+}
+.pf-v5-c-form-control:focus-within {
+  border-bottom-color: var(--el-blue);
+}
+.pf-v5-c-form-control input {
+  padding-left: 0;
+  font-size: 15px;
+  font-family: var(--el-font);
+}
+.pf-v5-c-input-group {
+  border: 0;
+  border-bottom: 1px solid var(--el-line);
+}
+.pf-v5-c-input-group .pf-v5-c-form-control {
+  border-bottom: 0;
+}
+.pf-v5-c-button.pf-m-control {
+  --pf-v5-c-button--m-control--BorderRadius: 0;
+  border: 0;
+  background: transparent;
+  color: var(--el-muted);
+  box-shadow: none;
+}
+.pf-v5-c-button.pf-m-control::after {
+  border: 0;
+}
+.pf-v5-c-form__group + .pf-v5-c-form__group {
+  margin-top: 16px;
+}
+.pf-v5-c-form__actions {
+  margin-top: 28px;
+}
+.pf-v5-c-login__main-footer-band {
+  margin-top: 16px;
+}

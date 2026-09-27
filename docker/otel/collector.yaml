@@ -1,0 +1,97 @@
+# OpenTelemetry Collector with redaction (ADR-023, SEC-14). The SDK already
+# reduces attributes to the allowlist; this is the second, independent stage.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  redaction:
+    allow_all_keys: false
+    allowed_keys:
+      - user.id
+      - app.actor.kind
+      - app.job
+      - app.request.id
+      - app.workspace.id
+      - http.request.method
+      - http.response.status_code
+      - http.route
+      - server.address
+      - server.port
+      - network.protocol.version
+      - db.system.name
+      - db.operation.name
+      - db.namespace
+      - error.type
+      - app.error.code
+      - app.error.hash
+      - gen_ai.conversation.id
+      - gen_ai.provider.name
+      - gen_ai.request.model
+      - gen_ai.usage.input_tokens
+      - gen_ai.usage.output_tokens
+      - app.policy.decision
+      - app.policy.rule
+      - app.scope.label
+      - app.scope.stage
+      - app.scope.rule_id
+      - app.security.event
+      - app.security.severity
+      - app.repository.id
+      - app.ingest.ref
+      - app.ingest.trigger
+      - app.ingest.state
+      - app.ingest.step
+      - app.run.state
+      - app.gate.released
+      - app.gate.mechanism
+      - url.scheme
+      - service.name
+      - service.version
+      - deployment.environment
+      - telemetry.sdk.name
+      - telemetry.sdk.language
+      - telemetry.sdk.version
+    blocked_values:
+      - "(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}"
+      - "sk-ant-[A-Za-z0-9_-]{20,}"
+      - "gh[pousr]_[A-Za-z0-9]{36,}"
+      - "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+      - "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+    summary: info
+  batch:
+    timeout: 1s
+
+exporters:
+  otlp_grpc/lgtm:
+    endpoint: otel-lgtm:4317
+    tls:
+      insecure: true
+  file:
+    path: /var/lib/otel/traces.jsonl
+    flush_interval: 1s
+  file/logs:
+    path: /var/lib/otel/logs.jsonl
+    flush_interval: 1s
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [redaction, batch]
+      exporters: [otlp_grpc/lgtm, file]
+    # Logs (pino through the OpenTelemetry bridge, security events included) pass the same
+    # redaction and land in Loki beside the traces, correlated by trace id and request id.
+    logs:
+      receivers: [otlp]
+      processors: [redaction, batch]
+      exporters: [otlp_grpc/lgtm, file/logs]
+    # Metrics: RED from the HTTP instrumentation and the application's counters, into Prometheus.
+    metrics:
+      receivers: [otlp]
+      processors: [redaction, batch]
+      exporters: [otlp_grpc/lgtm]

@@ -1,0 +1,12 @@
+{
+  "id": "cite-precision-001",
+  "tier": "correctness",
+  "fixture": "node-express-shop",
+  "question": "Where is the cart total computed?",
+  "oracle": {
+    "kind": "citation",
+    "must_cite_file": "src/cart.js",
+    "expected_symbol": null
+  },
+  "labelled_by": null
+}

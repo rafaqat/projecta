@@ -1,0 +1,21 @@
+{
+  "id": "ingest-invariants-001",
+  "tier": "robustness",
+  "note": "The robustness tier's ingest invariants (ADR-039), measured over the robust-shop fixture: it is ingested at a pinned commit the branch has since moved past, and held to the gates below rather than to answers. The measurement that greens this tier is written to evals/runs/robustness.latest.json by tests/functional/evals/robustness_run.spec.ts.",
+  "repository": {
+    "fixture": "fixtures/robust-shop",
+    "pinned": "the first commit; the branch then moves on, as the real corpus's branches do"
+  },
+  "invariants": [
+    "ingest_indexed",
+    "parse_timeouts",
+    "peak_rss_bytes",
+    "max_chunks_per_file"
+  ],
+  "thresholds": {
+    "parseTimeouts": 0,
+    "peakRssBytes": 4294967296,
+    "maxChunksPerFile": 1000
+  },
+  "labelled_by": "Rafaqat"
+}

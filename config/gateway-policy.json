@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "issuedAt": "2026-09-22T09:00:49.398Z",
+  "models": [
+    "claude-haiku-4-5-20251001"
+  ],
+  "configHashes": [
+    "2dc6f3e91dd798cc38d5e51b15a92ba7305474eda2a6ca2b90fb33ea1e2d9d5e",
+    "2b8012cb0a101395769d9ab1b0c4139422c363eb6e9418c23068c9f4f2f4e557"
+  ],
+  "promptHashes": [
+    "86fd2b4266c8ed85d1cbab6eaa83ac77f3926400bdcd76dc5666801512839080",
+    "59d7d791aeb4026c670ebf2587518c6151c9a2b08045e38821737b7e28faba12"
+  ],
+  "toolDefinitionHashes": [
+    "b8dcf4c9d115f18f9f241c93d384499b20a5b8045267c59e4a89a4268da28901",
+    "3e9f640930698888a4319446b707561a0ff266db2efc73c56ad2ece19daac0d0"
+  ],
+  "blockTypes": [
+    "text",
+    "search_result",
+    "tool_use",
+    "tool_result"
+  ],
+  "canaries": [],
+  "allowedUrlHosts": [
+    "github.com",
+    "www.npmjs.com",
+    "nodejs.org",
+    "developer.mozilla.org"
+  ],
+  "routes": {
+    "default": "anthropic",
+    "workspaces": {}
+  },
+  "attributionKeys": {
+    "web": {
+      "crv": "Ed25519",
+      "x": "IsBYHtuFyzNZSoQ-5T8GiU9GVuqXBHMKV1V-PaTYhTQ",
+      "kty": "OKP"
+    },
+    "worker": {
+      "crv": "Ed25519",
+      "x": "vzg-XVo5jzTcjL3NH_oIPxEZm9wlI048X5ptzFIX_Uc",
+      "kty": "OKP"
+    },
+    "web-a": {
+      "crv": "Ed25519",
+      "x": "8_CY2OptJkrgUAGs8cXIWoDSbZDX7PnKfUToYCF7w94",
+      "kty": "OKP"
+    },
+    "worker-a": {
+      "crv": "Ed25519",
+      "x": "CCg-JIc-D3X6M9RkVJDBRPxe7TU6uBLL0BLoSq7KHdg",
+      "kty": "OKP"
+    }
+  }
+}

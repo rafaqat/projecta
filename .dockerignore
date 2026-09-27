@@ -1,0 +1,28 @@
+# Host-only artifacts that must never enter the image build context.
+#
+# The model-server virtualenv is created on the host by `make model-server` / `make up-gpu`; its
+# `bin/python` is a symlink to a host Python that does not resolve inside the Linux builder, which
+# crashes build-manifest.mjs's file walk (statSync ENOENT) and fails the app-test image build. CI
+# has no host venv, so this only bit local `make build`/`make redeploy` after `make up-gpu`.
+**/.venv
+services/model-server/.venv
+**/__pycache__
+**/*.pyc
+
+# The weights: ~1.8 GB the `models` stage fetches into a BuildKit cache mount and verifies against
+# models.lock.json, so they must never travel as context — which is once per image target, on every
+# build. docker/Dockerfile's models stage already documents the exclusion; the line was missing.
+models
+
+# Installed by the `deps` and `prod-deps` stages from the lockfile. Sending the host's copy adds
+# ~1 GB per target, and the build stage's `COPY . .` then laid the host platform's native modules
+# (re2) over the ones npm ci had just built for the image.
+node_modules
+**/node_modules
+
+# Rebuilt inside the image; a stale host copy would be copied over the fresh output.
+build
+
+# Runtime scratch, created on the host for the collector's bind mount by `make up`. It reached
+# 225 MB of telemetry here, which was most of what remained of the context.
+tmp
