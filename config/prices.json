@@ -1,0 +1,36 @@
+{
+  "version": "2026-09-14",
+  "_note": "Unit prices in USD per million tokens, per route. Source: https://platform.claude.com/docs/en/about-claude/pricing on 2026-09-14 (base input, 5-minute cache write, cache read, output). Claude in Microsoft Foundry bills through the Azure Marketplace in Claude Consumption Units rated at the same standard per-model rates ($0.01 per CCU; negotiated discounts are applied as fewer CCUs; the US Data Zone deployment type applies a 1.1x multiplier), so the Foundry route carries the same list rates until the agreement's discount is entered. A change bumps the version.",
+  "routes": {
+    "anthropic": {
+      "claude-haiku-4-5-20251001": {
+        "inputPerMillion": 1.0,
+        "outputPerMillion": 5.0,
+        "cacheReadPerMillion": 0.1,
+        "cacheCreationPerMillion": 1.25
+      },
+      "claude-sonnet-5": {
+        "inputPerMillion": 2.0,
+        "outputPerMillion": 10.0,
+        "cacheReadPerMillion": 0.2,
+        "cacheCreationPerMillion": 2.5
+      }
+    },
+    "foundry": {
+      "claude-haiku-4-5-20251001": {
+        "inputPerMillion": 1.0,
+        "outputPerMillion": 5.0,
+        "cacheReadPerMillion": 0.1,
+        "cacheCreationPerMillion": 1.25,
+        "_placeholder": "list rate via CCU; enter the agreement discount and the US Data Zone multiplier if used"
+      },
+      "claude-sonnet-5": {
+        "inputPerMillion": 2.0,
+        "outputPerMillion": 10.0,
+        "cacheReadPerMillion": 0.2,
+        "cacheCreationPerMillion": 2.5,
+        "_placeholder": "list rate via CCU; enter the agreement discount and the US Data Zone multiplier if used"
+      }
+    }
+  }
+}

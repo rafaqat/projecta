@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "outDir": "build",
+    "rootDir": "../..",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "../../app/audit/anchors.ts", "../../app/audit/chain.ts", "../../app/audit/signing.ts", "../../app/audit/writer.ts"]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "llm-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node build/services/llm-gateway/src/server.js"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@opentelemetry/api": "^1.9.0",
+    "canonicalize": "^5.0.0",
+    "jose": "^6.2.12",
+    "pg": "^8.16.3"
+  }
+}

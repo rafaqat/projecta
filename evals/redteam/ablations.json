@@ -1,0 +1,406 @@
+{
+  "description": "Every mitigation named in evals/redteam/threats.yaml maps to a test-only ablation flag (app/security/ablations.ts) or a recorded reason it cannot be ablated at runtime, with the test that proves it (ADR-013, AC-WP10-04).",
+  "mitigations": {
+    "attribute_allowlist": {
+      "reason": "proven by the WP-01 telemetry canary and AC-WP06-18",
+      "layer": "app",
+      "threats": [
+        "T-21"
+      ]
+    },
+    "boot_guards": {
+      "reason": "proven by AC-WP01 image boot guard tests",
+      "layer": "runtime",
+      "threats": [
+        "T-19"
+      ]
+    },
+    "bounded_extraction": {
+      "reason": "WP-11 (AC-WP11-02) rejects traversal and decompression bombs",
+      "layer": "ingest",
+      "threats": [
+        "T-14"
+      ]
+    },
+    "budgets": {
+      "reason": "per-user gateway budgets are a WP-08 follow-up (not implemented); tool loops are bounded by iteration_cap and turn_deadline",
+      "layer": "gateway",
+      "threats": [
+        "T-06"
+      ]
+    },
+    "command_flagging": {
+      "reason": "client-side rendering policy; proven by AC-WP06-06 browser test",
+      "layer": "app",
+      "threats": [
+        "T-11"
+      ]
+    },
+    "deny_rules": {
+      "reason": ".claude/settings.json deny list; verified by hand, not at runtime",
+      "layer": "agent",
+      "threats": [
+        "T-18"
+      ]
+    },
+    "diversity_caps": {
+      "ablation": "no_diversity_caps",
+      "layer": "app",
+      "threats": [
+        "T-08"
+      ],
+      "evidence": "discriminates at the retrieval layer: tests/functional/redteam/rank_poison_ablations.spec.ts (AC-WP10-03); the T-08 case is a retrieval case, which runSuite does not replay"
+    },
+    "encoded_payloads": {
+      "reason": "repository convention enforced by the payload marker scan (AC-WP10-01)",
+      "layer": "repo",
+      "threats": [
+        "T-18"
+      ]
+    },
+    "end_of_options": {
+      "reason": "proven by AC-WP03 option-shaped ref tests",
+      "layer": "ingest",
+      "threats": [
+        "T-24"
+      ]
+    },
+    "entity_verifier": {
+      "ablation": "no_entity_verifier",
+      "layer": "app",
+      "threats": [
+        "T-05"
+      ]
+    },
+    "environment_scoped_subjects": {
+      "reason": "WP-14 (AC-WP14-03)",
+      "layer": "ci",
+      "threats": [
+        "T-20"
+      ]
+    },
+    "exception_scrubbing": {
+      "reason": "proven by AC-WP01 exception policy tests",
+      "layer": "app",
+      "threats": [
+        "T-21"
+      ]
+    },
+    "forward_proxy_allowlist": {
+      "reason": "network topology; proven by AC-WP01 egress tests (containers cannot reach forbidden destinations)",
+      "layer": "network",
+      "threats": [
+        "T-14"
+      ]
+    },
+    "history_sends_answers_and_handles_only": {
+      "reason": "proven by AC-WP06-05 / INV-15 continuation payload test",
+      "layer": "app",
+      "threats": [
+        "T-23"
+      ]
+    },
+    "hold_back_rules": {
+      "ablation": "no_hold_back_rules",
+      "layer": "gateway",
+      "threats": [
+        "T-10"
+      ],
+      "evidence": "the gateway's hold-back rules as a whole; the conformance suite (AC-WP08-02) covers the streaming form"
+    },
+    "honeytoken_rule": {
+      "ablation": "no_honeytoken_rule",
+      "layer": "gateway",
+      "threats": [
+        "T-03"
+      ]
+    },
+    "hydration_rejects_unknown": {
+      "ablation": "no_hydration_rejects_unknown",
+      "layer": "app",
+      "threats": [
+        "T-12"
+      ]
+    },
+    "immutable_identity_keys": {
+      "reason": "proven by AC-WP02-01 (email change keeps the account; same email different oid separates)",
+      "layer": "app",
+      "threats": [
+        "T-22"
+      ]
+    },
+    "injection_flag": {
+      "reason": "annotation only by design (ADR-033 \u00a76); AC-WP08-11 proves it never changes a decision",
+      "layer": "ingest",
+      "threats": [
+        "T-07"
+      ]
+    },
+    "internal_eval_ingress": {
+      "reason": "WP-14 (AC-WP14-04)",
+      "layer": "network",
+      "threats": [
+        "T-19"
+      ]
+    },
+    "iteration_cap": {
+      "ablation": "no_iteration_cap",
+      "evidence": "AC-WP06-01 structural contract case",
+      "layer": "app",
+      "threats": [
+        "T-06"
+      ]
+    },
+    "job_permission_isolation": {
+      "reason": "proven by AC-WP00-03 workflow checks and zizmor",
+      "layer": "ci",
+      "threats": [
+        "T-20"
+      ]
+    },
+    "link_policy": {
+      "reason": "client-side rendering policy; proven by AC-WP06-06 browser test",
+      "layer": "app",
+      "threats": [
+        "T-11"
+      ]
+    },
+    "no_external_urls": {
+      "ablation": "no_gateway_url_rule",
+      "layer": "gateway",
+      "threats": [
+        "T-07",
+        "T-11"
+      ]
+    },
+    "no_llm_in_decision_path": {
+      "reason": "WP-13: enforced by an import-path CI check (AC-WP13-03)",
+      "layer": "app",
+      "threats": [
+        "T-09"
+      ]
+    },
+    "no_secrets_in_session": {
+      "reason": "operational rule (CLAUDE.md); not machine-checkable",
+      "layer": "agent",
+      "threats": [
+        "T-18"
+      ]
+    },
+    "no_shell": {
+      "reason": "Semgrep rule no-shell-spawn (WP-03) plus git runner using execFile",
+      "layer": "ingest",
+      "threats": [
+        "T-24"
+      ]
+    },
+    "object_db_reads_no_checkout": {
+      "reason": "ingestion reads git objects only (ADR-019); proven by AC-WP03-01 (no working tree, symlink targets as text)",
+      "layer": "ingest",
+      "threats": [
+        "T-13"
+      ]
+    },
+    "output_sanitiser": {
+      "reason": "React escaping plus SafeHtml/DOMPurify; browser-enforced. Proven by AC-WP06-07 (XSS canary never executes) and INV-06 lint",
+      "layer": "app",
+      "threats": [
+        "T-04",
+        "T-07"
+      ]
+    },
+    "prompt_contains_no_secrets": {
+      "reason": "structural: the prompt is a versioned file with no secret material; the canary rule (system_prompt_canary_rule) is the runtime control",
+      "layer": "app",
+      "threats": [
+        "T-01"
+      ]
+    },
+    "prompt_contract": {
+      "reason": "prompt text is not an executable control; the entity verifier and the gate are. Ablate those instead",
+      "layer": "app",
+      "threats": [
+        "T-05",
+        "T-10"
+      ]
+    },
+    "react_escaping": {
+      "reason": "framework behaviour; proven by AC-WP06-07 XSS canary test",
+      "layer": "ui",
+      "threats": [
+        "T-17"
+      ]
+    },
+    "redaction": {
+      "reason": "collector configuration; proven by the WP-01 telemetry canary through the collector",
+      "layer": "collector",
+      "threats": [
+        "T-21"
+      ]
+    },
+    "ref_format_validation": {
+      "reason": "proven by AC-WP03 option-shaped ref tests",
+      "layer": "ingest",
+      "threats": [
+        "T-24"
+      ]
+    },
+    "registry_only_fetch": {
+      "reason": "WP-11 Tier 1 fetch (AC-WP11-02) ignores lockfile resolved",
+      "layer": "ingest",
+      "threats": [
+        "T-14"
+      ]
+    },
+    "repository_acl": {
+      "ablation": "no_app_scope_checks",
+      "evidence": "AC-WP02-05 IDOR matrix with restricted repositories",
+      "layer": "app",
+      "threats": [
+        "T-15"
+      ]
+    },
+    "row_level_security": {
+      "reason": "database policy; cannot be switched at runtime by the app role. Proven by AC-WP02-06 (policies present) and the no_app_scope_checks ablation still denying",
+      "layer": "app",
+      "threats": [
+        "T-03",
+        "T-16"
+      ]
+    },
+    "safe_html_component": {
+      "reason": "INV-06 lint (react/no-danger) plus AC-WP06-07",
+      "layer": "ui",
+      "threats": [
+        "T-17"
+      ]
+    },
+    "scoped_hydration": {
+      "reason": "every hydration joins through the actor scope; proven by AC-WP05-01 and AC-WP06-03",
+      "layer": "app",
+      "threats": [
+        "T-16"
+      ]
+    },
+    "secret_redaction": {
+      "ablation": "no_secret_redaction",
+      "evidence": "AC-WP03-05 (ingest redaction) proves the control; replay cases ablate the gateway secret rules",
+      "layer": "ingest",
+      "threats": [
+        "T-02"
+      ]
+    },
+    "secret_rules": {
+      "ablation": "no_secret_rules",
+      "layer": "gateway",
+      "threats": [
+        "T-02"
+      ]
+    },
+    "separate_test_targets": {
+      "reason": "proven by AC-WP01-02 (production image contains no test modules)",
+      "layer": "build",
+      "threats": [
+        "T-19"
+      ]
+    },
+    "session_scoped_tools": {
+      "ablation": "no_app_scope_checks",
+      "evidence": "AC-WP02-05 IDOR matrix and the tenancy ablation tests",
+      "layer": "app",
+      "threats": [
+        "T-03",
+        "T-10"
+      ]
+    },
+    "signed_policy_artefacts": {
+      "reason": "proven by AC-WP08-04 (unsigned or wrongly signed policy refused)",
+      "layer": "ci",
+      "threats": [
+        "T-20"
+      ]
+    },
+    "strict_csp": {
+      "reason": "browser-enforced header; proven by AC-WP01 header tests and AC-WP06-07 CSP-violation listener",
+      "layer": "app",
+      "threats": [
+        "T-04",
+        "T-17"
+      ]
+    },
+    "sufficiency_gate": {
+      "ablation": "no_sufficiency_gate",
+      "layer": "app",
+      "threats": [
+        "T-08"
+      ],
+      "evidence": "discriminates at the retrieval layer: tests/functional/redteam/rank_poison_ablations.spec.ts (AC-WP10-03); the T-08 case is a retrieval case, which runSuite does not replay"
+    },
+    "summary_verifier": {
+      "reason": "WP-13 deliverable; case frozen with runner test once it exists",
+      "layer": "app",
+      "threats": [
+        "T-09"
+      ]
+    },
+    "system_prompt_canary_rule": {
+      "ablation": "no_system_prompt_canary_rule",
+      "layer": "gateway",
+      "threats": [
+        "T-01"
+      ]
+    },
+    "tenant_and_issuer_allowlist": {
+      "reason": "proven by AC-WP02-01 (foreign tid and unlisted iss rejected)",
+      "layer": "app",
+      "threats": [
+        "T-22"
+      ]
+    },
+    "text_normalisation": {
+      "ablation": "no_text_normalisation",
+      "layer": "gateway",
+      "threats": [
+        "T-11"
+      ]
+    },
+    "turn_deadline": {
+      "ablation": "no_turn_deadline",
+      "evidence": "AC-WP06-01 structural contract case",
+      "layer": "app",
+      "threats": [
+        "T-06"
+      ]
+    },
+    "turn_local_handles": {
+      "ablation": "no_hydration_rejects_unknown",
+      "evidence": "AC-WP06-02 foreign handle test",
+      "layer": "app",
+      "threats": [
+        "T-12",
+        "T-16"
+      ]
+    },
+    "unprivileged_parser_process": {
+      "reason": "process isolation (read-only fs, no secrets in env); proven by AC-WP03-01 and the parser child tests",
+      "layer": "ingest",
+      "threats": [
+        "T-13"
+      ]
+    },
+    "url_and_protocol_policy": {
+      "reason": "proven by AC-WP03-02/03 registration policy tests including redirect chains",
+      "layer": "ingest",
+      "threats": [
+        "T-14"
+      ]
+    },
+    "workspace_keyed_caches": {
+      "reason": "proven by AC-WP04 (two workspaces share no cache rows)",
+      "layer": "ingest",
+      "threats": [
+        "T-16"
+      ]
+    }
+  }
+}

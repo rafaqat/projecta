@@ -1,0 +1,15 @@
+{
+  "name": "audit-writer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node build/services/audit-writer/src/main.js"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.33.0",
+    "canonicalize": "^5.0.0",
+    "pg": "^8.16.3"
+  }
+}

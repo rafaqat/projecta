@@ -1,0 +1,7 @@
+{
+  "name": "@cia/guards",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Guard logic for the LLM gateway (ADR-010): output rules with hold-back, inbound checks, injection annotation. Pure Node; no provider or framework dependencies."
+}

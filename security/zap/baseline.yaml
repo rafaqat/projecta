@@ -1,0 +1,37 @@
+# ZAP Automation Framework — passive baseline. Spiders the app's public surface and runs passive
+# rules (security headers, CSP, cookie flags, info leaks). No active attacks; safe for CI/preview.
+env:
+  contexts:
+    - name: projectA
+      urls:
+        - "http://localhost:3333"
+      includePaths:
+        - "http://localhost:3333.*"
+      excludePaths:
+        - "http://localhost:3333/auth/logout.*"
+  parameters:
+    failOnError: true
+    progressToStdout: true
+jobs:
+  - type: passiveScan-config
+    parameters:
+      scanOnlyInScope: true
+  - type: spider
+    parameters:
+      context: projectA
+      url: "http://localhost:3333"
+      maxDuration: 3
+      maxDepth: 6
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: zap-baseline
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: zap-baseline
