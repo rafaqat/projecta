@@ -1,0 +1,11 @@
+{
+  "labelled_by": null,
+  "note": "SCAFFOLD ONLY (R-08). The encoding set for the lookalikes fixture: each case names a file and the owner's judgement of whether it should be ingested and chunked. A person authors these golden labels; the byte-integrity test (tests/functional/benign/encoding.spec.ts, AC-WP19-02) is skipped until labelled_by is set. Example shape below; replace `cases` with the reviewed set.",
+  "cases": [
+    {
+      "file": "src/encoding/utf16le-bom.ts",
+      "expectIngested": true,
+      "expectChunked": true
+    }
+  ]
+}

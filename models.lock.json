@@ -1,0 +1,103 @@
+{
+  "description": "Model files downloaded at build time by scripts/fetch-models.mjs, pinned by revision and SHA-256 (ADR-027, SEC-24). Owner approved the embedding model on 2026-09-11. Grammar wasm files are pinned the same way (build-plan \u00a74: web-tree-sitter grammars for Swift and Kotlin); owner-facing review of the pin is in PR #12.",
+  "models": [
+    {
+      "id": "jinaai/jina-embeddings-v2-base-code",
+      "purpose": "code embeddings (768-dimensional, Apache-2.0)",
+      "revision": "516f4baf13dec4ddddda8631e019b5737c8bc250",
+      "files": [
+        {
+          "path": "config.json",
+          "sha256": "e426aa684c7f9a95c5f020aa855faf93a24f065f5fad0c9e17b124670cabdea6"
+        },
+        {
+          "path": "tokenizer.json",
+          "sha256": "b01c78a902aa4facb2f47f95449f48e2f7bbfea5d2472ee2f6ce92323c6f86e5"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sha256": "f477aeb15ff9f78d3c1ddf2361d2b0b8b20cf55220f839f29a37f3a18efddd89"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "sha256": "06e405a36dfe4b9604f484f6a1e619af1a7f7d09e34a8555eb0b77b66318067f"
+        },
+        {
+          "path": "onnx/model_quantized.onnx",
+          "sha256": "ed45870251c9f0cf656e78aab0d37a23489066df8a222bb1c8caf8a45f2cb16d"
+        },
+        {
+          "path": "model.safetensors",
+          "sha256": "8b53bfd4ae2cd586004a6ca4a16551b630a2a1b1d655ff1ee9be1286a1781c5b"
+        }
+      ]
+    },
+    {
+      "id": "protectai/deberta-v3-base-prompt-injection-v2",
+      "purpose": "injection detector (ADR-037): prompt-injection text classifier, Apache-2.0; fp32 ONNX, the only published ONNX variant",
+      "role": "injection_detector",
+      "revision": "90c9989b1a342275dd0d1a95aad283c04e075671",
+      "files": [
+        {
+          "path": "config.json",
+          "sha256": "05079f4735092040b780d459027afab413faa6eeb66a548571a58832304b60bb"
+        },
+        {
+          "path": "tokenizer.json",
+          "sha256": "f0a66ad0d735d8dca9ecac4ff50fcdef4bb6adbadd2941a926844844d2c2059b"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sha256": "557b3d33d3f41b81ad769244e506549e98a1857d41dd58160aacd4d98d710b5a"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "sha256": "9463f61e1b109a8eb4688b829260d7c6b1e6dff04c98ff7269bb89e2b92369b9"
+        },
+        {
+          "path": "added_tokens.json",
+          "sha256": "dc046d04c9b0ada7ae6f1dc89c465801799acdf0c9a6aab8c15a1b2d5ca4e91f"
+        },
+        {
+          "path": "onnx/model.onnx",
+          "sha256": "f0ea7f239f765aedbde7c9e163a7cb38a79c5b8853d3f76db5152172047b228c"
+        },
+        {
+          "path": "model.safetensors",
+          "sha256": "6521cb8d0ac08148c81464899c424e6148fcc62befa371089fa4061d8b6e0424"
+        }
+      ]
+    },
+    {
+      "id": "jinaai/jina-bert-v2-qk-post-norm",
+      "revision": "3baf9e3ac750e76e8edd3019170176884695fb94",
+      "purpose": "code embeddings, torch implementation (ADR-040): the architecture code the embedder's safetensors weights load into on the model server; the ONNX file needs none. Pinned like weights, loaded from disk, never trust_remote_code against the hub.",
+      "files": [
+        {
+          "path": "configuration_bert.py",
+          "sha256": "d018de11bcb62cedf436c8876459e5cd119d1faf72bc107338576a6d1b8eeea5"
+        },
+        {
+          "path": "modeling_bert.py",
+          "sha256": "8f96ef0576401f6b996f9b72ad34e13190139eec1195767516485876434bb612"
+        }
+      ]
+    }
+  ],
+  "grammars": [
+    {
+      "id": "swift",
+      "purpose": "Swift grammar for web-tree-sitter (MIT, alex-pinkus/tree-sitter-swift release 0.7.3, ABI 15)",
+      "url": "https://github.com/alex-pinkus/tree-sitter-swift/releases/download/0.7.3/tree-sitter-swift.wasm",
+      "path": "grammars/tree-sitter-swift.wasm",
+      "sha256": "0258a7ef17303a8079ffe0748b3583d59656b5c3e8653fca7b6451b3e6689eb2"
+    },
+    {
+      "id": "kotlin",
+      "purpose": "Kotlin grammar for web-tree-sitter (MIT, fwcd/tree-sitter-kotlin release 0.3.8, ABI 14)",
+      "url": "https://github.com/fwcd/tree-sitter-kotlin/releases/download/0.3.8/tree-sitter-kotlin.wasm",
+      "path": "grammars/tree-sitter-kotlin.wasm",
+      "sha256": "c624e7443b371c28adc5d81674e73067564c12555ebe3ed96a6c8db814b7602d"
+    }
+  ]
+}

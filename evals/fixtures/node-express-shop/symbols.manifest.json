@@ -1,0 +1,172 @@
+{
+  "fixture": "node-express-shop",
+  "description": "Golden symbol manifest for AC-WP04-01: every symbol at the fixture commit with path, qualified name, kind and 1-based inclusive line range. Locals inside function bodies are not symbols (owner decision, 2026-09-12). Confirmed row by row by the labeller from a reading of the source; regions are extractor output and are not listed.",
+  "labelled_by": "rafaqat",
+  "labelled_at": "2026-09-12",
+  "files": [
+    "src/app.ts",
+    "src/middleware/auth.ts",
+    "src/routes/orders.ts",
+    "src/routes/products.ts",
+    "src/server.ts",
+    "src/services/InventoryService.ts",
+    "src/services/PaymentService.ts",
+    "src/utils/retry.ts"
+  ],
+  "symbols": [
+    {
+      "path": "src/app.ts",
+      "qualifiedName": "createApp",
+      "kind": "function",
+      "startLine": 6,
+      "endLine": 13
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "qualifiedName": "requireAuth",
+      "kind": "function",
+      "startLine": 9,
+      "endLine": 14
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "qualifiedName": "ordersRouter",
+      "kind": "variable",
+      "startLine": 6,
+      "endLine": 6
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "qualifiedName": "payments",
+      "kind": "variable",
+      "startLine": 7,
+      "endLine": 7
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "qualifiedName": "inventory",
+      "kind": "variable",
+      "startLine": 8,
+      "endLine": 8
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "qualifiedName": "orderSchema",
+      "kind": "variable",
+      "startLine": 10,
+      "endLine": 10
+    },
+    {
+      "path": "src/routes/products.ts",
+      "qualifiedName": "productsRouter",
+      "kind": "variable",
+      "startLine": 4,
+      "endLine": 4
+    },
+    {
+      "path": "src/routes/products.ts",
+      "qualifiedName": "inventory",
+      "kind": "variable",
+      "startLine": 5,
+      "endLine": 5
+    },
+    {
+      "path": "src/server.ts",
+      "qualifiedName": "port",
+      "kind": "variable",
+      "startLine": 3,
+      "endLine": 3
+    },
+    {
+      "path": "src/server.ts",
+      "qualifiedName": "app",
+      "kind": "variable",
+      "startLine": 4,
+      "endLine": 4
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "Product",
+      "kind": "interface",
+      "startLine": 3,
+      "endLine": 7
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "InventoryService",
+      "kind": "class",
+      "startLine": 9,
+      "endLine": 35
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "InventoryService.pool",
+      "kind": "variable",
+      "startLine": 10,
+      "endLine": 10
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "InventoryService.listProducts",
+      "kind": "method",
+      "startLine": 12,
+      "endLine": 15
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "InventoryService.findBySku",
+      "kind": "method",
+      "startLine": 17,
+      "endLine": 20
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "qualifiedName": "InventoryService.reserve",
+      "kind": "method",
+      "startLine": 22,
+      "endLine": 34
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "qualifiedName": "PaymentService",
+      "kind": "class",
+      "startLine": 4,
+      "endLine": 24
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "qualifiedName": "PaymentService.stripe",
+      "kind": "variable",
+      "startLine": 5,
+      "endLine": 5
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "qualifiedName": "PaymentService.chargeCard",
+      "kind": "method",
+      "startLine": 7,
+      "endLine": 10
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "qualifiedName": "PaymentService.refundPayment",
+      "kind": "method",
+      "startLine": 12,
+      "endLine": 18
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "qualifiedName": "PaymentService.priceFor",
+      "kind": "method",
+      "startLine": 20,
+      "endLine": 23
+    },
+    {
+      "path": "src/utils/retry.ts",
+      "qualifiedName": "withRetry",
+      "kind": "function",
+      "startLine": 1,
+      "endLine": 12
+    }
+  ]
+}

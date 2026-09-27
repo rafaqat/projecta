@@ -1,0 +1,1174 @@
+{
+  "fixture": "node-express-shop",
+  "description": "Golden reference manifest (ADR-044): every resolved edge at the fixture commit — from (declaration or <file>), to (path|qualified name, package#name, or ?name when unresolved), kind, resolution tier, and the line of the site. Scaffolded from the current extraction; a person confirms each row against a reading of the source, moves the confirmed rows to `edges`, removes wrong ones, adds missed ones, and sets labelled_by (R-08). Nothing is a pass until then.",
+  "labelled_by": "Rafaqat",
+  "labelled_at": "2026-09-19",
+  "candidates": [
+    {
+      "path": "src/app.ts",
+      "line": 7,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#default"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 8,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#default.json"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 9,
+      "from": "createApp",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /health"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 10,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 10,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/middleware/auth.ts|requireAuth"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/middleware/auth.ts|requireAuth"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 6,
+      "from": "ordersRouter",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 7,
+      "from": "payments",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 8,
+      "from": "inventory",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.number"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.string"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.object"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?POST /"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 13,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|orderSchema"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 14,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.reserve"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 15,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService.chargeCard"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 19,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 19,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?POST /:orderId/refund"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 20,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService.refundPayment"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 4,
+      "from": "productsRouter",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 5,
+      "from": "inventory",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 8,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.listProducts"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 11,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 11,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /:sku"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.findBySku"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 4,
+      "from": "app",
+      "kind": "call",
+      "resolution": "exact",
+      "to": "src/app.ts|createApp"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 6,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|port"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 6,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|app"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|port"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 10,
+      "from": "InventoryService.pool",
+      "kind": "new",
+      "resolution": "external",
+      "to": "pg#Pool"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 13,
+      "from": "InventoryService.listProducts",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 18,
+      "from": "InventoryService.findBySku",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 25,
+      "from": "InventoryService.reserve",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 5,
+      "from": "PaymentService.stripe",
+      "kind": "new",
+      "resolution": "external",
+      "to": "stripe#default"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 8,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "exact",
+      "to": "src/services/PaymentService.ts|PaymentService.priceFor"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/utils/retry.ts|withRetry"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents.create"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 13,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents.retrieve"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 13,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/utils/retry.ts|withRetry"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.refunds.create"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.refunds"
+    }
+  ],
+  "edges": [
+    {
+      "path": "src/app.ts",
+      "line": 7,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#default"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 8,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Application.use"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 8,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#default.json"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 9,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Application.get"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 9,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 9,
+      "from": "createApp",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /health"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 10,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Application.use"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 10,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 10,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Application.use"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/middleware/auth.ts|requireAuth"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "middleware",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/middleware/auth.ts|requireAuth"
+    },
+    {
+      "path": "src/app.ts",
+      "line": 11,
+      "from": "createApp",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "line": 10,
+      "from": "requireAuth",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Request.header"
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "line": 10,
+      "from": "requireAuth",
+      "kind": "call",
+      "resolution": "external",
+      "to": "javascript#String.replace"
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "line": 11,
+      "from": "requireAuth",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "line": 11,
+      "from": "requireAuth",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.status"
+    },
+    {
+      "path": "src/middleware/auth.ts",
+      "line": 13,
+      "from": "requireAuth",
+      "kind": "call",
+      "resolution": "unresolved",
+      "to": "?next"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 6,
+      "from": "ordersRouter",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 7,
+      "from": "payments",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 8,
+      "from": "inventory",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "unresolved",
+      "to": "?z.number().int"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "unresolved",
+      "to": "?z.number().int().positive"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.number"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.object"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 10,
+      "from": "orderSchema",
+      "kind": "call",
+      "resolution": "external",
+      "to": "zod#z.string"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router.post"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?POST /"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 13,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "unresolved",
+      "to": "?orderSchema.parse"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 13,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|orderSchema"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 14,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|inventory"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 14,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.reserve"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 15,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|payments"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 15,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService.chargeCard"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 16,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 16,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.status"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 19,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router.post"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 19,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|ordersRouter"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 19,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?POST /:orderId/refund"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 20,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/orders.ts|payments"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 20,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/PaymentService.ts|PaymentService.refundPayment"
+    },
+    {
+      "path": "src/routes/orders.ts",
+      "line": 21,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 4,
+      "from": "productsRouter",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 5,
+      "from": "inventory",
+      "kind": "new",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router.get"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 8,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 8,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|inventory"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 8,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.listProducts"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 11,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Router.get"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 11,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|productsRouter"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 11,
+      "from": "<file>",
+      "kind": "route_handler",
+      "resolution": "unresolved",
+      "to": "?GET /:sku"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/routes/products.ts|inventory"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 12,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/services/InventoryService.ts|InventoryService.findBySku"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 13,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 13,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.status"
+    },
+    {
+      "path": "src/routes/products.ts",
+      "line": 14,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Response.json"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 3,
+      "from": "port",
+      "kind": "call",
+      "resolution": "external",
+      "to": "javascript#Number"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 4,
+      "from": "app",
+      "kind": "call",
+      "resolution": "exact",
+      "to": "src/app.ts|createApp"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 6,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "express#Application.listen"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 6,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|app"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 6,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|port"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "call",
+      "resolution": "external",
+      "to": "node:console#log"
+    },
+    {
+      "path": "src/server.ts",
+      "line": 7,
+      "from": "<file>",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/server.ts|port"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 10,
+      "from": "InventoryService.pool",
+      "kind": "new",
+      "resolution": "external",
+      "to": "pg#Pool"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 13,
+      "from": "InventoryService.listProducts",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 13,
+      "from": "InventoryService.listProducts",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/InventoryService.ts|InventoryService.pool"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 18,
+      "from": "InventoryService.findBySku",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 18,
+      "from": "InventoryService.findBySku",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/InventoryService.ts|InventoryService.pool"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 25,
+      "from": "InventoryService.reserve",
+      "kind": "call",
+      "resolution": "external",
+      "to": "pg#Pool.query"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 25,
+      "from": "InventoryService.reserve",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/InventoryService.ts|InventoryService.pool"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 31,
+      "from": "InventoryService.reserve",
+      "kind": "call",
+      "resolution": "external",
+      "to": "node:timers#setTimeout"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 31,
+      "from": "InventoryService.reserve",
+      "kind": "new",
+      "resolution": "external",
+      "to": "javascript#Promise"
+    },
+    {
+      "path": "src/services/InventoryService.ts",
+      "line": 33,
+      "from": "InventoryService.reserve",
+      "kind": "new",
+      "resolution": "external",
+      "to": "javascript#Error"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 5,
+      "from": "PaymentService.stripe",
+      "kind": "new",
+      "resolution": "external",
+      "to": "stripe#default"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 8,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "exact",
+      "to": "src/services/PaymentService.ts|PaymentService.priceFor"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/utils/retry.ts|withRetry"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents.create"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/PaymentService.ts|PaymentService.stripe"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 9,
+      "from": "PaymentService.chargeCard",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 13,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents.retrieve"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 13,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/PaymentService.ts|PaymentService.stripe"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 13,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.paymentIntents"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 15,
+      "from": "PaymentService.refundPayment",
+      "kind": "new",
+      "resolution": "external",
+      "to": "javascript#Error"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "alias",
+      "to": "src/utils/retry.ts|withRetry"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "call",
+      "resolution": "external",
+      "to": "stripe#default.refunds.create"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "exact",
+      "to": "src/services/PaymentService.ts|PaymentService.stripe"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 17,
+      "from": "PaymentService.refundPayment",
+      "kind": "reference",
+      "resolution": "external",
+      "to": "stripe#default.refunds"
+    },
+    {
+      "path": "src/services/PaymentService.ts",
+      "line": 21,
+      "from": "PaymentService.priceFor",
+      "kind": "call",
+      "resolution": "external",
+      "to": "javascript#String.startsWith"
+    },
+    {
+      "path": "src/utils/retry.ts",
+      "line": 5,
+      "from": "withRetry",
+      "kind": "call",
+      "resolution": "unresolved",
+      "to": "?operation"
+    },
+    {
+      "path": "src/utils/retry.ts",
+      "line": 9,
+      "from": "withRetry",
+      "kind": "call",
+      "resolution": "external",
+      "to": "node:timers#setTimeout"
+    },
+    {
+      "path": "src/utils/retry.ts",
+      "line": 9,
+      "from": "withRetry",
+      "kind": "new",
+      "resolution": "external",
+      "to": "javascript#Promise"
+    }
+  ],
+  "provenance": {
+    "source": "node-express-shop-references (1).xlsx, returned by the owner 2026-09-21",
+    "review": "49 candidates yes, 0 no, 0 wrong; 46 additional edges",
+    "basis": "Embedded source only. The workbook's own note: these labels were produced by rafaqat, not independently human-adjudicated under R-08. Imported verbatim on the owner's instruction (2026-09-21, 'import the sheet') with this note kept.",
+    "conventions": [
+      "Assumption: @services and @utils resolve to src/services and src/utils.",
+      "Inline handlers keep ?METHOD path and unresolved; the marker records a registration, not a resolved callback symbol.",
+      "Anonymous callbacks inherit the enclosing named declaration, or <file>; variable initializers use the variable name.",
+      "Scope: calls, construction, route/middleware registrations, references to module declarations and class fields. Excluded: type/import-only links, local-variable/parameter reference-only links, arbitrary data-property reads.",
+      "Both registration and ordinary call edges are included; they are distinct kinds."
+    ]
+  }
+}

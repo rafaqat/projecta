@@ -1,0 +1,66 @@
+{
+  "adr": "",
+  "note": "The robustness tier's corpus and thresholds. Commits are full ids, each verified against GitHub on 2026-09-19; the ADR's table carries their first 12 characters and `make docs-check` holds the two in step. A threshold changes only through a superseding ADR, never through a run's output.",
+  "corpus": [
+    {
+      "slug": "Acode-Foundation/Acode",
+      "detectorNegatives": true,
+      "commit": "428395f66c474c697524839de8baadd0710e81c5",
+      "shape": "1,061-file app; locales/ bundles; long ingest"
+    },
+    {
+      "slug": "qist/tvbox",
+      "commit": "877343e1bd6998add8a23b356818fb04256b9932",
+      "shape": "data-heavy: CJK literals, the token-cap case"
+    },
+    {
+      "slug": "Eigenwise/eigenwise-toolshed",
+      "commit": "58a657421fe530dcae3f5cfab4cb95bfd09dbca6",
+      "shape": "multi-package, NUL past the sniff window"
+    },
+    {
+      "slug": "addyosmani/agent-skills",
+      "detectorNegatives": true,
+      "commit": "be4e44a9fbc5e8df0beaefadbb28bd22ee61cc39",
+      "shape": "docs-heavy: withholding must track the supported-file ratio"
+    },
+    {
+      "slug": "yuliskov/SmartTubeLegacy",
+      "commit": "c3f88897da99fe4f467d1c421d20614b9ba6a095",
+      "shape": "Android/Java: the unsupported-language path at scale"
+    },
+    {
+      "slug": "abinth11/StyleSwap",
+      "detectorNegatives": true,
+      "commit": "5828b8ee19de874884c2128864d8132631c92bd7",
+      "shape": "owner-labelled expected citations",
+      "expected": "evals/cases/uat/expected/abinth11__StyleSwap.json",
+      "vars": "evals/cases/uat/vars/styleswap.json"
+    },
+    {
+      "slug": "apple/swift-argument-parser",
+      "commit": "f29e03f4f96125cd930a045b4c17145c7bd5557a",
+      "shape": "Swift"
+    },
+    {
+      "slug": "thoughtbot/administrate",
+      "commit": "c14ca70ec0adde9868d107b8832549f855d086b7",
+      "shape": "Rails engine: Ruby (unsupported) beside JS assets"
+    },
+    {
+      "slug": "m-i-n-a-r/birday",
+      "commit": "daf6ad20836eb53f4ca0fb170567f5471ce897ff",
+      "shape": "Android app, all Kotlin"
+    }
+  ],
+  "thresholds": {
+    "parseTimeouts": 0,
+    "peakRssBytes": { "inProcess": 4294967296, "modelServer": 1610612736 },
+    "maxChunksPerFile": 1000,
+    "failedTurns": 0,
+    "withheldAllowance": 0.15,
+    "minimumSamples": 5,
+    "expectationRecallFloor": 0.5,
+    "unverifiedNameRate": null
+  }
+}

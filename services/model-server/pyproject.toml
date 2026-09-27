@@ -1,0 +1,19 @@
+[project]
+name = "model-server"
+version = "0.1.0"
+description = ": the embedder and the injection classifier behind one URL, on the GPU the host has (Metal, CUDA) or CPU. Loads only the files models.lock.json pins."
+requires-python = ">=3.12"
+dependencies = [
+  "torch==2.9.0",
+  "transformers==4.46.3",
+  "einops==0.8.1",
+  "safetensors>=0.4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+# Dependency cooldown: a version published in the last week is not resolved (supply chain).
+exclude-newer = "2026-09-08T00:00:00Z"
