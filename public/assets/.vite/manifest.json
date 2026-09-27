@@ -1,0 +1,258 @@
+{
+  "_badge-BXqFQzO_.js": {
+    "file": "badge-BXqFQzO_.js",
+    "name": "badge",
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_createLucideIcon-BUJSrcds.js",
+      "_button-DfGhoRAQ.js"
+    ]
+  },
+  "_button-DfGhoRAQ.js": {
+    "file": "button-DfGhoRAQ.js",
+    "name": "button",
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js"
+    ]
+  },
+  "_circle-check-CNqRwYaL.js": {
+    "file": "circle-check-CNqRwYaL.js",
+    "name": "circle-check",
+    "imports": [
+      "_createLucideIcon-BUJSrcds.js"
+    ]
+  },
+  "_createLucideIcon-BUJSrcds.js": {
+    "file": "createLucideIcon-BUJSrcds.js",
+    "name": "createLucideIcon",
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js"
+    ]
+  },
+  "_dist-CSLO-hih.js": {
+    "file": "dist-CSLO-hih.js",
+    "name": "dist",
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js"
+    ]
+  },
+  "_fingerprint-pattern-DJca4sBr.js": {
+    "file": "fingerprint-pattern-DJca4sBr.js",
+    "name": "fingerprint-pattern",
+    "imports": [
+      "_createLucideIcon-BUJSrcds.js"
+    ]
+  },
+  "_git-commit-horizontal-CCCmco-C.js": {
+    "file": "git-commit-horizontal-CCCmco-C.js",
+    "name": "git-commit-horizontal",
+    "imports": [
+      "_createLucideIcon-BUJSrcds.js"
+    ]
+  },
+  "_jsx-runtime-Cx0BB4qO.js": {
+    "file": "jsx-runtime-Cx0BB4qO.js",
+    "name": "jsx-runtime"
+  },
+  "_react-p5TVeQwU.js": {
+    "file": "react-p5TVeQwU.js",
+    "name": "react",
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js"
+    ]
+  },
+  "_scan-search-DElgyb9K.js": {
+    "file": "scan-search-DElgyb9K.js",
+    "name": "scan-search",
+    "imports": [
+      "_createLucideIcon-BUJSrcds.js"
+    ]
+  },
+  "_triangle-alert-CH2hU93D.js": {
+    "file": "triangle-alert-CH2hU93D.js",
+    "name": "triangle-alert",
+    "imports": [
+      "_createLucideIcon-BUJSrcds.js"
+    ]
+  },
+  "inertia/app.tsx": {
+    "file": "app--ug0g4Ns.js",
+    "name": "app",
+    "src": "inertia/app.tsx",
+    "isEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_react-p5TVeQwU.js",
+      "_createLucideIcon-BUJSrcds.js",
+      "_badge-BXqFQzO_.js",
+      "_button-DfGhoRAQ.js"
+    ],
+    "dynamicImports": [
+      "inertia/pages/about/show.tsx",
+      "inertia/pages/auth/login.tsx",
+      "inertia/pages/auth/signup.tsx",
+      "inertia/pages/auth/unavailable.tsx",
+      "inertia/pages/duplicates/index.tsx",
+      "inertia/pages/errors/not_found.tsx",
+      "inertia/pages/errors/server_error.tsx",
+      "inertia/pages/home.tsx",
+      "inertia/pages/isolation/index.tsx",
+      "inertia/pages/releases/index.tsx",
+      "inertia/pages/repositories/show.tsx",
+      "inertia/pages/workspaces/index.tsx",
+      "inertia/app.tsx"
+    ],
+    "css": [
+      "app-BRULvQqQ.css"
+    ]
+  },
+  "inertia/pages/about/show.tsx": {
+    "file": "show-aBmUU_Is.js",
+    "name": "show",
+    "src": "inertia/pages/about/show.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "inertia/app.tsx"
+    ]
+  },
+  "inertia/pages/auth/login.tsx": {
+    "file": "login-DqO1bxcF.js",
+    "name": "login",
+    "src": "inertia/pages/auth/login.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js"
+    ]
+  },
+  "inertia/pages/auth/signup.tsx": {
+    "file": "signup-ClNy9Ief.js",
+    "name": "signup",
+    "src": "inertia/pages/auth/signup.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js"
+    ]
+  },
+  "inertia/pages/auth/unavailable.tsx": {
+    "file": "unavailable-BMMcG7Wb.js",
+    "name": "unavailable",
+    "src": "inertia/pages/auth/unavailable.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_react-p5TVeQwU.js"
+    ]
+  },
+  "inertia/pages/duplicates/index.tsx": {
+    "file": "duplicates-CEgD81bs.js",
+    "name": "duplicates",
+    "src": "inertia/pages/duplicates/index.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_git-commit-horizontal-CCCmco-C.js",
+      "_triangle-alert-CH2hU93D.js",
+      "inertia/app.tsx"
+    ]
+  },
+  "inertia/pages/errors/not_found.tsx": {
+    "file": "not_found-C7UNFkQN.js",
+    "name": "not_found",
+    "src": "inertia/pages/errors/not_found.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js"
+    ]
+  },
+  "inertia/pages/errors/server_error.tsx": {
+    "file": "server_error-CcNMFByG.js",
+    "name": "server_error",
+    "src": "inertia/pages/errors/server_error.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js"
+    ]
+  },
+  "inertia/pages/home.tsx": {
+    "file": "home-C58CjRA-.js",
+    "name": "home",
+    "src": "inertia/pages/home.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_react-p5TVeQwU.js",
+      "_createLucideIcon-BUJSrcds.js",
+      "_fingerprint-pattern-DJca4sBr.js",
+      "_scan-search-DElgyb9K.js",
+      "_button-DfGhoRAQ.js"
+    ]
+  },
+  "inertia/pages/isolation/index.tsx": {
+    "file": "isolation-nFla10kx.js",
+    "name": "isolation",
+    "src": "inertia/pages/isolation/index.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_circle-check-CNqRwYaL.js",
+      "_triangle-alert-CH2hU93D.js",
+      "inertia/app.tsx"
+    ]
+  },
+  "inertia/pages/releases/index.tsx": {
+    "file": "releases-Bd2xIFUn.js",
+    "name": "releases",
+    "src": "inertia/pages/releases/index.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_circle-check-CNqRwYaL.js",
+      "_fingerprint-pattern-DJca4sBr.js",
+      "_triangle-alert-CH2hU93D.js",
+      "inertia/app.tsx"
+    ]
+  },
+  "inertia/pages/repositories/show.tsx": {
+    "file": "show-DQ_vjTdp.js",
+    "name": "show",
+    "src": "inertia/pages/repositories/show.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_createLucideIcon-BUJSrcds.js",
+      "_circle-check-CNqRwYaL.js",
+      "_git-commit-horizontal-CCCmco-C.js",
+      "_badge-BXqFQzO_.js",
+      "_scan-search-DElgyb9K.js",
+      "_triangle-alert-CH2hU93D.js",
+      "_button-DfGhoRAQ.js",
+      "inertia/app.tsx"
+    ]
+  },
+  "inertia/pages/workspaces/index.tsx": {
+    "file": "workspaces-DstSfDx3.js",
+    "name": "workspaces",
+    "src": "inertia/pages/workspaces/index.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_jsx-runtime-Cx0BB4qO.js",
+      "_dist-CSLO-hih.js",
+      "_react-p5TVeQwU.js",
+      "inertia/app.tsx"
+    ]
+  }
+}

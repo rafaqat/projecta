@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Cx0BB4qO.js";var t=e();function n(){return(0,t.jsx)(t.Fragment,{children:(0,t.jsx)(`h1`,{children:`Page not found`})})}export{n as default};
