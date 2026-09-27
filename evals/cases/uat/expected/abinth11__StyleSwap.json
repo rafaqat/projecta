@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "repository": "abinth11/StyleSwap",
+  "labelled_by": "rafaqat",
+  "labelled_at": "2026-09-17",
+  "_how": "For each question, list the files (repository paths) and symbols (qualified names) a correct answer must cite; leave both empty for a question with no single right citation. Set labelled_by and labelled_at when done (R-08). Scored by recall of these among the answer's citations; below 0.5 the answer is classed missed.",
+  "questions": [
+    {
+      "area": "Overview",
+      "question": "What does this application do, based on its code?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Overview",
+      "question": "What languages, frameworks, and major components does it use?",
+      "expectedPaths": [
+        "README.md",
+        "views/index.hbs",
+        "views/partials/user-header.hbs",
+        "views/users/shop-cart.hbs",
+        "views/users/shop-checkout.hbs"
+      ],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Overview",
+      "question": "Where are the application entry points, and what happens during startup?",
+      "expectedPaths": [
+        "README.md",
+        "views/users/shop-product-right.hbs",
+        "views/users/user-profile/shop-product-change.hbs"
+      ],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Architecture",
+      "question": "How is the codebase organised, and what is each major directory responsible for?",
+      "expectedPaths": [
+        "README.md"
+      ],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Architecture",
+      "question": "Trace a typical request from its entry point through business logic to the database and back.",
+      "expectedPaths": [
+        "app.js",
+        "contants/httpStatusCodes.js",
+        "controlers/adminControlers/dashboardControlers.js",
+        "helpers/userHelpers/walletHelpers.js",
+        "public/javascripts/script.js",
+        "routes/admin.js",
+        "views/admin/page-orders-1.hbs",
+        "views/users/shop-orders.hbs",
+        "views/users/shop-product-right.hbs",
+        "views/users/user-profile/shop-product-change.hbs"
+      ],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Architecture",
+      "question": "Which components communicate with external services, and how?",
+      "expectedPaths": [
+        "README.md",
+        "contants/httpStatusCodes.js",
+        "middlewares/twilio.js",
+        "routes/admin.js",
+        "routes/users.js",
+        "views/index.hbs",
+        "views/users/shop-cart.hbs",
+        "views/users/shop-checkout.hbs",
+        "views/users/shop-kids.hbs",
+        "views/users/shop-men.hbs"
+      ],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Finding functionality",
+      "question": "Where is user registration implemented?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Finding functionality",
+      "question": "Which files implement authentication, and which implement authorisation?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Finding functionality",
+      "question": "Where is the coupon code check enforced, and who calls that code?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "API endpoints",
+      "question": "List the HTTP endpoints, their methods, handlers, and authentication requirements.",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "API endpoints",
+      "question": "For POST /apply-coupon-code, what inputs are accepted, how are they validated, and what responses can it return?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "API endpoints",
+      "question": "Which endpoints change data, and where are their database transactions handled?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Data and storage",
+      "question": "What are the main data models, and how are they related?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Data and storage",
+      "question": "Where is stock created, updated, and read?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Data and storage",
+      "question": "How are database migrations, constraints, and indexes defined?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Dependencies",
+      "question": "What are the main direct dependencies, and what are they used for in the code?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Dependencies",
+      "question": "Where is mongodb imported and called?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Dependencies",
+      "question": "Are there dependencies declared in the manifests with no usage visible in the indexed code?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Configuration",
+      "question": "Which environment variables are referenced, and which appear required?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Configuration",
+      "question": "How does configuration differ between development, test, and production?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Configuration",
+      "question": "Where are secrets loaded, and is sensitive information potentially written to logs?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Errors and reliability",
+      "question": "What happens when Razorpay times out or returns an error?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Errors and reliability",
+      "question": "Where are retries configured, and could a retry repeat a write or payment?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Errors and reliability",
+      "question": "How are background jobs scheduled, executed, and recovered after failure?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Security",
+      "question": "Where does the application check that a user can access a specific record?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Security",
+      "question": "Trace user-controlled input from POST /apply-coupon-code to database queries, file access, or shell execution.",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Security",
+      "question": "How does the application prevent one customer from accessing another customer's data?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Tests",
+      "question": "Which tests cover the cart, and what behaviour do they actually assert?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Tests",
+      "question": "What failure cases are tested for POST /apply-coupon-code?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Tests",
+      "question": "What important branches in cartControlers.addToCartGet have no corresponding tests visible in the repository?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Making changes",
+      "question": "If I add stock to product, which files would likely need changing, and why?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Making changes",
+      "question": "What callers and tests could be affected if I change orderControler.cancellOrders?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    },
+    {
+      "area": "Making changes",
+      "question": "Where should I implement a product review moderation queue to follow existing conventions?",
+      "expectedPaths": [],
+      "expectedSymbols": []
+    }
+  ],
+  "unlabelled_questions": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33
+  ]
+}

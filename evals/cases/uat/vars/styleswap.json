@@ -1,0 +1,13 @@
+{
+  "note": "Parameters for https://github.com/abinth11/StyleSwap (Express + MongoDB shop). Chosen from the route and controller names; not expected answers.",
+  "rule": "the coupon code check",
+  "endpoint": "POST /apply-coupon-code",
+  "field": "stock",
+  "entity": "product",
+  "library": "mongodb",
+  "service": "Razorpay",
+  "feature": "the cart",
+  "function": "cartControlers.addToCartGet",
+  "signature": "orderControler.cancellOrders",
+  "newFeature": "a product review moderation queue"
+}
