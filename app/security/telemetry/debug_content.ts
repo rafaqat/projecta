@@ -62,7 +62,6 @@ export const CONTENT_ATTRIBUTE_CAPS: Readonly<Record<string, number>> = {
   'app.tool.output': 16_384,
   'app.evidence.paths': 16_384,
   'app.seed.names': 2_048,
-  'app.scope.reason': 2_048,
 }
 
 /** Derived, so the allowlist and the caps cannot disagree about which attributes carry content. */

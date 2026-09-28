@@ -234,7 +234,15 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           round
         )
         const outcome = await withTimeout(tool.run(use.input), limits.toolTimeoutMs, upstream)
-        toolSpan.setAttributes({ 'app.tool.status': outcome.status })
+        toolSpan.setAttributes({
+          'app.tool.status': outcome.status,
+          // What the model was handed back, beside what it asked for. Without this a trace shows
+          // the request and the verdict and leaves the answer's input to inference.
+          ...contentAttributes({
+            'app.tool.output':
+              outcome.status === 'ok' ? JSON.stringify(outcome.content ?? null) : outcome.status,
+          }),
+        })
         toolSpan.end()
         yield {
           type: 'tool',

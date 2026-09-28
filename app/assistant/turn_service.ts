@@ -17,6 +17,7 @@ import { isAblated, testSeam } from '#app/security/ablation_switch'
 import { inScope, type Scope } from '#app/security/scope'
 import { newHandle } from '#app/security/handles'
 import { securityEvents } from '#app/security/events/index'
+import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
 
 /**
  * One turn end to end (design §6): thread lookup, continuation payload,
@@ -138,6 +139,13 @@ export async function* answerTurn(
     fault: deps.gateFault,
   })
   deps.onGate?.(gate)
+  // The turn's span is opened here, not in the orchestrator, because the gate's outcome is known
+  // only once the stream has ended and this is the scope that sees both (ADR-023).
+  const turnSpan = startSpan('turn', {
+    'app.turn.commit': commit.sha,
+    ...contentAttributes({ 'app.turn.question': req.question }),
+  })
+  input.turnSpan = turnSpan
   const orchestrator =
     deps.orchestrator ?? (await testSeam<Orchestrator>('orchestrator')) ?? defaultOrchestrator()
   // Ablation `no_output_gate` (enforcement) shows what the gate contributes; test targets only.
@@ -170,6 +178,20 @@ export async function* answerTurn(
       yield event
     }
   } finally {
+    // What the reader was actually given, and what was held back: the two facts a trace could not
+    // answer before, because the gate decides them after the orchestrator's stream is done.
+    annotate(turnSpan, {
+      'app.turn.run_state': runState,
+      'app.turn.released': gate.outcome.released.length > 0,
+      'app.turn.citations': citations.length,
+      'app.turn.withheld_count': gate.outcome.withheld.length,
+      ...(gate.outcome.withheldBy ? { 'app.gate.mechanism': gate.outcome.withheldBy } : {}),
+      ...contentAttributes({
+        'app.turn.answer': gate.outcome.released,
+        'app.turn.withheld': gate.outcome.withheld,
+      }),
+    })
+    turnSpan.end()
     deps.onTrace?.(trace)
     // The turn, its citations and the decision record land in one transaction (design §9).
     await inScope(scope, (trx) =>

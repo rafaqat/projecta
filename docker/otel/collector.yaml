@@ -54,18 +54,12 @@ processors:
       - app.retrieval.seeds
       - app.retrieval.items
       - app.retrieval.chunks
-      - app.retrieval.lexical_backend
       - app.agent.round
       - app.agent.tools_requested
       - app.agent.stop_reason
       - app.agent.iterations
       - app.tool.name
       - app.tool.status
-      - app.model.id
-      - app.model.input_tokens
-      - app.model.output_tokens
-      - app.model.cache_read_tokens
-      - app.model.cache_creation_tokens
       - app.gate.mechanism
       # DEVELOPER STACK ONLY. These carry request content and exist so a turn can be reconstructed
       # on a machine whose repository and questions belong to the person reading them. The
@@ -80,7 +74,6 @@ processors:
       - app.tool.output
       - app.evidence.paths
       - app.seed.names
-      - app.scope.reason
       - app.security.event
       - app.security.severity
       - app.repository.id

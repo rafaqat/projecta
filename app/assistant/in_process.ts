@@ -102,11 +102,17 @@ export class InProcessOrchestrator implements Orchestrator {
       ({ type: 'status', label, runId, runState }) as const
     // The turn's own span (ADR-023). The run handle is on it, so a dashboard row and the turn
     // record name the same run; the question itself rides only under the developer flag.
-    const turnSpan = startSpan('turn', {
-      'app.turn.run_handle': runId,
-      'app.turn.commit': input.commitSha,
-      ...contentAttributes({ 'app.turn.question': input.question }),
-    })
+    // The caller owns the span when it has one: the gate's outcome is known only after this
+    // stream ends, so whoever sees that must be the one to close it.
+    const turnSpan =
+      input.turnSpan ??
+      startSpan('turn', {
+        'app.turn.run_handle': runId,
+        'app.turn.commit': input.commitSha,
+        ...contentAttributes({ 'app.turn.question': input.question }),
+      })
+    const ownsSpan = input.turnSpan === undefined
+    annotate(turnSpan, { 'app.turn.run_handle': runId })
     yield status('running', 'running')
     try {
       // Scored in parallel with routing and retrieval; annotation only, never a gate.
@@ -605,7 +611,7 @@ export class InProcessOrchestrator implements Orchestrator {
       yield { type: 'error', message: 'the turn failed' }
       yield status('failed', 'failed')
     } finally {
-      turnSpan.end()
+      if (ownsSpan) turnSpan.end()
     }
   }
 
