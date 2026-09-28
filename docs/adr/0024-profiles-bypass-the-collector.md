@@ -1,7 +1,7 @@
 ---
 id: ADR-0024
 title: "Profiles leave the process without passing the Collector: a stack frame is a symbol, not data"
-status: proposed
+status: accepted
 date: 2026-09-28
 supersedes: []
 superseded_by: []
