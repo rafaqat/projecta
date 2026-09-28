@@ -28,6 +28,7 @@ processors:
       - db.namespace
       - error.type
       - app.error.code
+      - app.error.cause
       - app.error.hash
       - gen_ai.conversation.id
       - gen_ai.provider.name

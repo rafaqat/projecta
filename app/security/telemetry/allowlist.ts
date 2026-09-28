@@ -25,6 +25,7 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   // errors as codes and hashes only
   'error.type',
   'app.error.code',
+  'app.error.cause',
   'app.error.hash',
   // model calls (design §15)
   'gen_ai.conversation.id',

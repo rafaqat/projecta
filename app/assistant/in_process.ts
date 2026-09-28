@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto'
 import logger from '@adonisjs/core/services/logger'
 import { defaultInjectionDetector, type InjectionDetector } from '#app/parse/injection'
 import { GeneralParser } from '#app/assistant/general_parser'
+import { modelErrorLabel } from '#app/assistant/model_error'
 import type { ModelClient, SearchResultBlock } from '#app/assistant/model'
 import { namedPaths } from '#app/retrieval/entity_check'
 import {
@@ -520,7 +521,16 @@ export class InProcessOrchestrator implements Orchestrator {
           if (event.reason === 'aborted') outcome = status('client disconnected', 'cancelled')
           else if (event.reason === 'deadline')
             outcome = status('turn deadline reached', 'cancelled')
-          else if (event.reason === 'model_error') outcome = status('model error', 'failed')
+          else if (event.reason === 'model_error')
+            // The code, not just "model error": it is what the dashboard shows, and without it here a
+            // reader of the run has to open the trace to tell one failure from another.
+            outcome = status(
+              modelErrorLabel({
+                code: event.errorCode ?? 'E_MODEL_ERROR',
+                cause: event.errorCause,
+              }),
+              'failed'
+            )
           else if (event.reason === 'output_blocked') {
             // What was released before the block stands; the reader is told the rule.
             const rule = event.rule ?? 'output'

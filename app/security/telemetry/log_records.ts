@@ -24,6 +24,7 @@ export const LOG_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.ingest.trigger',
   'app.job',
   'app.error.code',
+  'app.error.cause',
   'app.error.hash',
   'app.policy.rule',
   'app.policy.decision',
@@ -59,6 +60,7 @@ export function logAttributesOf(record: Record<string, unknown>): Attributes {
     put('app.workspace.id', event.actor?.workspaceId)
     const fields = event.fields ?? {}
     put('app.error.code', fields.errorCode)
+    put('app.error.cause', fields.errorCause)
     put('app.error.hash', fields.errorHash)
     put('http.response.status_code', fields.status)
     put('app.request.id', fields.requestId)
@@ -74,6 +76,7 @@ export function logAttributesOf(record: Record<string, unknown>): Attributes {
   put('app.ingest.trigger', record.trigger)
   put('app.job', record.job)
   put('app.error.code', record.errorCode)
+  put('app.error.cause', record.errorCause)
   put('app.error.hash', record.errorHash)
   put('http.response.status_code', record.status)
   const err = record.err as { type?: unknown; name?: unknown; code?: unknown } | undefined
