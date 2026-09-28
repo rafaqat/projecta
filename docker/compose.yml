@@ -45,7 +45,7 @@ x-app-env: &app-env
   DEPENDENCY_REGISTRIES: ${DEPENDENCY_REGISTRIES:-https://registry.npmjs.org}
   NODE_USE_ENV_PROXY: '1'
   HTTPS_PROXY: http://squid:3128
-  NO_PROXY: postgres,llm-gateway,otel-collector,azurite,mock-oidc,provider-stub,keycloak,localhost,127.0.0.1
+  NO_PROXY: postgres,llm-gateway,otel-collector,otel-lgtm,azurite,mock-oidc,provider-stub,keycloak,localhost,127.0.0.1
   # ADR-040: the model server on the host's GPU. The `internal` network has no route to the host;
   # requests go through Squid, which allows only host.docker.internal:8765 (squid.conf).
   # Unset, the embedder and the classifier run in-process.
@@ -58,6 +58,9 @@ x-app-env: &app-env
   # rather than ~684 sub-millisecond queries. Errors and slow queries are always kept, and the
   # count survives as app.db.spans.dropped. Unset keeps every span.
   OTEL_DB_SPAN_MIN_MS: ${OTEL_DB_SPAN_MIN_MS:-5}
+  # Continuous profiling into the stack's Pyroscope. Unset disables it. Note otel-lgtm is on
+  # NO_PROXY above: without that the push would be routed to Squid, which allows neither.
+  PYROSCOPE_SERVER_ADDRESS: ${PYROSCOPE_SERVER_ADDRESS:-http://otel-lgtm:4040}
 
 services:
   dns:
@@ -396,6 +399,8 @@ services:
       - ../.env
     environment:
       <<: *app-env
+      # Separates the worker's flame graphs from the web process's in Pyroscope.
+      PYROSCOPE_ROLE: worker
       # .env holds secrets that belong to other components; env_file would hand this service all of
       # them, so they are blanked here — environment overrides env_file (ADR-025, ADR-072, AC-WP26-04).
       AUDIT_SIGNING_SEED: ''
