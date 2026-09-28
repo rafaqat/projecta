@@ -1,7 +1,7 @@
 ---
 id: ADR-0023
 title: "Telemetry carries three classes of attribute; content is a developer affordance, not a deployment setting"
-status: proposed
+status: accepted
 date: 2026-09-28
 supersedes: []
 superseded_by: []
