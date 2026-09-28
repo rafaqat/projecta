@@ -109,8 +109,26 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
     round = undefined
   }
   try {
-    for (const run of input.preRuns ?? [])
+    for (const run of input.preRuns ?? []) {
+      // The index answered before the model's first turn. It is a tool call in the transcript, so
+      // it is one in the trace too: without a span the dashboard shows a turn with 46 citations and
+      // no tool call, which reads as retrieval having found them.
+      const preSpan = startSpan(
+        'agent.tool',
+        {
+          'app.tool.name': run.name,
+          'app.tool.status': 'index',
+          'app.agent.round': 0,
+          ...contentAttributes({
+            'app.tool.input': JSON.stringify(run.input ?? null),
+            'app.tool.output': JSON.stringify(run.content ?? null),
+          }),
+        },
+        input.parentSpan
+      )
+      preSpan.end()
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
+    }
     for (;;) {
       round = startSpan(
         'agent.round',
