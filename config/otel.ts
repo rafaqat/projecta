@@ -8,6 +8,7 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import env from '#start/env'
 import { ActorSpanProcessor } from '#app/security/telemetry/actor_span_processor'
 import { AllowlistSpanExporter } from '#app/security/telemetry/allowlist_span_exporter'
+import { QuietDatabaseSpanExporter } from '#app/security/telemetry/quiet_db_spans'
 import { AllowlistLogRecordExporter } from '#app/security/telemetry/log_records'
 
 /**
@@ -26,7 +27,9 @@ export default defineConfig({
   spanProcessors: [
     new ActorSpanProcessor(),
     new BatchSpanProcessor(
-      new AllowlistSpanExporter(new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }))
+      new QuietDatabaseSpanExporter(
+        new AllowlistSpanExporter(new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }))
+      )
     ),
   ],
   // Logs: pino records reach the collector through the OpenTelemetry bridge with

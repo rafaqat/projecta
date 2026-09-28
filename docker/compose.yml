@@ -54,6 +54,10 @@ x-app-env: &app-env
   # Developer stack only: attaches the question, the evidence paths and tool arguments to spans
   # for debugging and secops. Refused outside local/test by the gate and by the boot guard.
   TELEMETRY_DEBUG_CONTENT: ${TELEMETRY_DEBUG_CONTENT:-}
+  # Developer stack: drop database spans faster than this so a turn's waterfall shows the loop
+  # rather than ~684 sub-millisecond queries. Errors and slow queries are always kept, and the
+  # count survives as app.db.spans.dropped. Unset keeps every span.
+  OTEL_DB_SPAN_MIN_MS: ${OTEL_DB_SPAN_MIN_MS:-5}
 
 services:
   dns:
@@ -115,6 +119,8 @@ services:
     # The stack's own Grafana dashboard: logs and security events (Loki), traces (Tempo).
     volumes:
       - ./grafana/provisioning.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/cia.yaml:ro
+      # Replaces the image's datasource provisioning so the Tempo span bars carry the tool name.
+      - ./grafana/datasources.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml:ro
       - ./grafana/dashboards:/otel-lgtm/grafana-dashboards/cia:ro
       # Loki, Tempo, Prometheus and Grafana state survive a recreate (removed by `make down`).
       - otel-lgtm-data:/data
