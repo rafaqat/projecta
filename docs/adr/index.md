@@ -25,3 +25,4 @@ accepted one. Propose a new ADR with `status: proposed` and stop for human accep
 | [ADR-0020](0020-registration-reachability-preflight.md) | Registration confirms the remote is reachable before it stores a repository | accepted |
 | [ADR-0021](0021-verification-gates-cited-release.md) | A cited sentence is released only after verification; a rejection withholds it | accepted |
 | [ADR-0022](0022-per-workspace-lexical-corpus.md) | A workspace is ranked against its own corpus, not the cluster's | accepted |
+| [ADR-0023](0023-telemetry-attribute-classes.md) | Telemetry carries three classes of attribute; content is a developer affordance, not a deployment setting | proposed |

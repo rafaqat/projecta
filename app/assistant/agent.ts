@@ -11,6 +11,8 @@ import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
+import { contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
 
@@ -93,10 +95,23 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
   const tools = new Map(input.tools.map((t) => [t.spec.name, t]))
   let iterations = 0
   let toolsAllowed = true
+  // The loop's spans (ADR-023). One per round, closed on every exit path including a throw, so a
+  // turn that ends mid-round leaves a span saying which round and why rather than nothing.
+  let round: Span | undefined
+  const endRound = (attributes: Record<string, string | number | boolean> = {}) => {
+    round?.setAttributes(attributes)
+    round?.end()
+    round = undefined
+  }
   try {
     for (const run of input.preRuns ?? [])
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
     for (;;) {
+      round = startSpan('agent.round', {
+        'app.agent.round': iterations + 1,
+        'app.agent.iterations': iterations,
+        ...contentAttributes({ 'app.turn.question': input.question }),
+      })
       const assistant: ContentBlock[] = []
       const toolUses: Array<{ id: string; name: string; input: unknown }> = []
       let textSoFar = ''
@@ -126,26 +141,32 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         }
       } catch (error) {
         if (upstream.aborted) {
-          yield { type: 'done', reason: signal.aborted ? 'aborted' : 'deadline' }
+          const reason = signal.aborted ? 'aborted' : 'deadline'
+          endRound({ 'app.agent.stop_reason': reason })
+          yield { type: 'done', reason }
         } else if ((error as { code?: string }).code === 'E_OUTPUT_BLOCKED') {
           // The gateway ended the answer on an output rule: a decision, not a failure.
-          yield {
-            type: 'done',
-            reason: 'output_blocked',
-            rule: (error as { rule?: string }).rule ?? 'output',
-          }
+          const rule = (error as { rule?: string }).rule ?? 'output'
+          endRound({ 'app.agent.stop_reason': 'output_blocked', 'app.policy.rule': rule })
+          yield { type: 'done', reason: 'output_blocked', rule }
         } else {
           // Never swallowed: the failure is reported with a code and a message hash.
-          yield { type: 'done', reason: 'model_error', ...reportModelError(error, input.call) }
+          const facts = reportModelError(error, input.call)
+          endRound({ 'app.agent.stop_reason': 'model_error', 'app.error.code': facts.errorCode })
+          yield { type: 'done', reason: 'model_error', ...facts }
         }
         return
       }
       if (upstream.aborted) {
-        yield { type: 'done', reason: signal.aborted ? 'aborted' : 'deadline' }
+        const reason = signal.aborted ? 'aborted' : 'deadline'
+        endRound({ 'app.agent.stop_reason': reason })
+        yield { type: 'done', reason }
         return
       }
       if (stop !== 'tool_use' || toolUses.length === 0 || !toolsAllowed) {
-        yield { type: 'done', reason: toolsAllowed ? 'end_turn' : 'iterations' }
+        const reason = toolsAllowed ? 'end_turn' : 'iterations'
+        endRound({ 'app.agent.stop_reason': reason, 'app.agent.tools_requested': toolUses.length })
+        yield { type: 'done', reason }
         return
       }
       if (iterations >= limits.maxToolIterations) {
@@ -171,6 +192,10 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           }
         )
         toolsAllowed = false
+        endRound({
+          'app.agent.stop_reason': 'tool_budget_exhausted',
+          'app.agent.tools_requested': toolUses.length,
+        })
         continue
       }
       iterations++
@@ -188,7 +213,14 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           })
           continue
         }
+        const toolSpan = startSpan('agent.tool', {
+          'app.tool.name': use.name,
+          'app.agent.round': iterations,
+          ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
+        })
         const outcome = await withTimeout(tool.run(use.input), limits.toolTimeoutMs, upstream)
+        toolSpan.setAttributes({ 'app.tool.status': outcome.status })
+        toolSpan.end()
         yield {
           type: 'tool',
           name: use.name,
@@ -210,8 +242,14 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         ...results.filter((b) => b.type !== 'tool_result'),
       ]
       messages.push({ role: 'assistant', content: assistant }, { role: 'user', content: ordered })
+      endRound({
+        'app.agent.stop_reason': 'tool_use',
+        'app.agent.tools_requested': toolUses.length,
+      })
     }
   } finally {
+    // A throw between rounds, or a consumer abandoning the generator, must not leak an open span.
+    endRound({ 'app.agent.stop_reason': 'incomplete' })
     clearTimeout(timer)
   }
 }

@@ -51,6 +51,9 @@ x-app-env: &app-env
   # Unset, the embedder and the classifier run in-process.
   HTTP_PROXY: http://squid:3128
   MODEL_SERVER_URL: ${MODEL_SERVER_URL:-}
+  # Developer stack only: attaches the question, the evidence paths and tool arguments to spans
+  # for debugging and secops. Refused outside local/test by the gate and by the boot guard.
+  TELEMETRY_DEBUG_CONTENT: ${TELEMETRY_DEBUG_CONTENT:-}
 
 services:
   dns:

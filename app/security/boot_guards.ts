@@ -19,7 +19,9 @@ export interface BootGuardResult {
   violations: string[]
 }
 
-const FORBIDDEN_FLAGS = ['MOCK_OIDC_ENABLED', 'FAKE_MODEL_ENABLED']
+const FORBIDDEN_FLAGS = ['MOCK_OIDC_ENABLED', 'FAKE_MODEL_ENABLED', 'TELEMETRY_DEBUG_CONTENT']
+/** Environments where content telemetry may be enabled at all (debug_content.ts agrees). */
+const DEVELOPER_ENVIRONMENTS = new Set(['local', 'test'])
 const EVAL_ROUTE_PREFIX = '/api/eval'
 
 export function evaluateBootGuards(input: BootGuardInput): BootGuardResult {
@@ -35,6 +37,12 @@ export function evaluateBootGuards(input: BootGuardInput): BootGuardResult {
   // back to the rules silently would report detection it does not perform.
   if (input.appEnv !== 'local' && !input.env.INJECTION_DETECTOR_MODEL) {
     violations.push('INJECTION_DETECTOR_MODEL is not set')
+  }
+  // Content telemetry is a developer affordance (app/security/telemetry/debug_content.ts). The
+  // gate already refuses to act outside local and test, so this guard adds nothing at runtime; it
+  // exists so a deployment carrying the flag fails loudly at boot rather than looking enabled.
+  if (!DEVELOPER_ENVIRONMENTS.has(input.appEnv) && input.env.TELEMETRY_DEBUG_CONTENT) {
+    violations.push('TELEMETRY_DEBUG_CONTENT is set outside a developer environment')
   }
   if (input.appEnv !== 'production') return { ok: violations.length === 0, violations }
 

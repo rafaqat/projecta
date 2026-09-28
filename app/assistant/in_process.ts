@@ -8,6 +8,7 @@ import logger from '@adonisjs/core/services/logger'
 import { defaultInjectionDetector, type InjectionDetector } from '#app/parse/injection'
 import { GeneralParser } from '#app/assistant/general_parser'
 import { modelErrorLabel } from '#app/assistant/model_error'
+import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
 import type { ModelClient, SearchResultBlock } from '#app/assistant/model'
 import { namedPaths } from '#app/retrieval/entity_check'
 import {
@@ -99,6 +100,13 @@ export class InProcessOrchestrator implements Orchestrator {
     const runId = newHandle() // opaque, assigned before retrieval
     const status = (label: string, runState: 'running' | 'completed' | 'cancelled' | 'failed') =>
       ({ type: 'status', label, runId, runState }) as const
+    // The turn's own span (ADR-023). The run handle is on it, so a dashboard row and the turn
+    // record name the same run; the question itself rides only under the developer flag.
+    const turnSpan = startSpan('turn', {
+      'app.turn.run_handle': runId,
+      'app.turn.commit': input.commitSha,
+      ...contentAttributes({ 'app.turn.question': input.question }),
+    })
     yield status('running', 'running')
     try {
       // Scored in parallel with routing and retrieval; annotation only, never a gate.
@@ -131,6 +139,12 @@ export class InProcessOrchestrator implements Orchestrator {
       // question that names nothing in the repository.
       const anchoredOnly =
         routed.decision.stage === 'classifier' && routed.decision.anchors.length === 0
+      annotate(turnSpan, {
+        'app.scope.label': routed.decision.label,
+        'app.scope.stage': routed.decision.stage,
+        ...(routed.decision.ruleId ? { 'app.scope.rule_id': routed.decision.ruleId } : {}),
+        'app.turn.scope_label': anchoredOnly ? 'anchored_only' : 'in_scope',
+      })
       yield status(anchoredOnly ? 'scope:anchored_only' : 'scope:in_scope', 'running')
       // Anchored on a name the index has: the gate never calls such a question out of scope (BL-08).
       if (routed.decision.anchors.length > 0) yield status('scope:anchored', 'running')
@@ -151,6 +165,14 @@ export class InProcessOrchestrator implements Orchestrator {
           })),
         }
       }
+      annotate(turnSpan, {
+        'app.retrieval.status': retrieval.status,
+        'app.retrieval.items': retrieval.shown,
+        'app.retrieval.chunks': retrieval.total,
+        ...contentAttributes({
+          'app.evidence.paths': retrieval.chunks.map((c) => c.path).join(' '),
+        }),
+      })
       yield status(`retrieval:${retrieval.status}`, 'running')
       const evidence = new TurnEvidence(input.scope, input.commitSha)
       input.onEvidence?.(evidence)
@@ -170,6 +192,11 @@ export class InProcessOrchestrator implements Orchestrator {
           routed.decision.anchors,
           vocabulary.packages
         )
+        annotate(turnSpan, {
+          'app.retrieval.seed_source': pack.seedSource,
+          'app.retrieval.seeds': pack.seeds.length,
+          ...contentAttributes({ 'app.seed.names': pack.seeds.map((x) => x.name).join(' ') }),
+        })
         const labels = new Map(pack.items.map((i) => [i.chunkId, relationLabel(i)]))
         evidenceBlocks.push(
           ...(await evidence.addChunks(
@@ -559,6 +586,10 @@ export class InProcessOrchestrator implements Orchestrator {
         )
       // Tool-added evidence carries the ingest flag too; the record counts everything the answer was built from.
       if (traceOut) traceOut.flaggedEvidence = evidence.flaggedChunkIds().size
+      annotate(turnSpan, {
+        'app.turn.run_state': outcome.type === 'status' ? outcome.runState : 'completed',
+        'app.turn.reason': outcome.type === 'status' ? outcome.label : '',
+      })
       yield outcome
     } catch (error) {
       // Never swallowed: the code and a message hash reach the log.
@@ -569,8 +600,11 @@ export class InProcessOrchestrator implements Orchestrator {
         status: 500,
         requestId: input.call?.requestId ?? '',
       })
+      annotate(turnSpan, { 'app.turn.run_state': 'failed', 'app.turn.reason': 'E_TURN_FAILED' })
       yield { type: 'error', message: 'the turn failed' }
       yield status('failed', 'failed')
+    } finally {
+      turnSpan.end()
     }
   }
 
