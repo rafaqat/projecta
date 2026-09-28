@@ -75,6 +75,7 @@ processors:
       - app.tool.output
       - app.evidence.paths
       - app.evidence.text
+      - app.model.messages
       - app.seed.names
       - app.security.event
       - app.security.severity

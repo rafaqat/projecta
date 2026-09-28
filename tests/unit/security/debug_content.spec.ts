@@ -64,19 +64,25 @@ test.group('content attribute caps', () => {
     const cutPaths = contentValue('app.evidence.paths', paths)
     const cutSeeds = contentValue('app.seed.names', seeds)
 
-    assert.equal(capFor('app.evidence.paths'), 16_384)
-    assert.equal(capFor('app.seed.names'), 2_048)
-    assert.isTrue(cutPaths.startsWith('p'.repeat(16_384)))
-    assert.include(cutPaths, '[truncated 3616]')
-    assert.include(cutSeeds, '[truncated 17952]')
-    // An evidence pack of a realistic size is carried whole, which the 2 KB cap did not do.
-    assert.equal(contentValue('app.evidence.paths', 'x'.repeat(4_000)).length, 4_000)
+    // Tempo truncates an attribute at 2048 bytes and says nothing, so the effective cap is the
+    // backend's ceiling until a deployment raises it; the marker is then ours rather than absent.
+    assert.equal(capFor('app.evidence.paths'), 2_000)
+    assert.include(cutPaths, '[truncated 18000]')
+    assert.include(cutSeeds, '[truncated 18000]')
+
+    // A deployment whose Tempo carries more gets the attribute's own cap.
+    const raised = { OTEL_ATTRIBUTE_CEILING_BYTES: '524288' }
+    assert.equal(capFor('app.evidence.paths', raised), 16_384)
+    assert.equal(capFor('app.seed.names', raised), 2_048)
+    assert.equal(capFor('app.model.messages', raised), 262_144)
   })
 
   test('every declared content attribute has a cap, and only those are content', ({ assert }) => {
     for (const key of CONTENT_ATTRIBUTES) assert.isNumber(CONTENT_ATTRIBUTE_CAPS[key])
     assert.deepEqual([...CONTENT_ATTRIBUTES].sort(), Object.keys(CONTENT_ATTRIBUTE_CAPS).sort())
-    // An undeclared key falls to the floor rather than being exported unbounded.
-    assert.equal(capFor('app.turn.not_declared'), 2_048)
+    // An undeclared key falls to the floor rather than being exported unbounded; the backend's
+    // ceiling then applies to it like any other.
+    assert.equal(capFor('app.turn.not_declared'), 2_000)
+    assert.equal(capFor('app.turn.not_declared', { OTEL_ATTRIBUTE_CEILING_BYTES: '524288' }), 2_048)
   })
 })

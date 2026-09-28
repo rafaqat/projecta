@@ -11,7 +11,7 @@ import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
-import { contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
 import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
@@ -291,6 +291,15 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
   } finally {
     // A throw between rounds, or a consumer abandoning the generator, must not leak an open span.
     endRound({ 'app.agent.stop_reason': 'incomplete' })
+    // The literal array the model was last sent. `messages` is append-only within a turn, so the
+    // final state contains every earlier one and capturing it here costs one copy rather than one
+    // per round. It overlaps the evidence text and the tool outputs on their own spans by design:
+    // those answer "what was retrieved" and "what did this tool return", this answers "what was in
+    // the request", and a reader chasing a model's behaviour wants the request as it was sent.
+    annotate(
+      input.parentSpan,
+      contentAttributes({ 'app.model.messages': JSON.stringify(messages) })
+    )
     clearTimeout(timer)
   }
 }

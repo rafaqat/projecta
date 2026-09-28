@@ -48,12 +48,31 @@ export function contentTelemetryEnabled(
  * long. One number for all of them was either too small for the long ones or wastefully large for
  * the short ones, and the first version clipped evidence packs silently at 2 KB.
  *
- * Nothing here is a platform limit. The SDK's own `attributeValueLengthLimit` defaults to
- * `Infinity`, the Collector accepts 4 MiB per message and Tempo allows megabytes per trace. What
- * these caps guard is repetition: an attribute set once per round is carried once per round, and
- * the turn's message array grows with every tool result it accumulates. Large content belongs on
- * the `turn` span, where it appears once.
+ * The ceiling is the backend's, not the SDK's. The SDK's `attributeValueLengthLimit` defaults to
+ * `Infinity` and the Collector accepts 4 MiB per message, but Tempo truncates a span attribute at
+ * `max_attribute_bytes`, which defaults to 2048 and cuts silently with no marker. Measured: an
+ * evidence text capped here at 64 KB arrived in Tempo at 2038 characters, which reads as an
+ * application bug and is not one.
+ *
+ * So the caps sit just under that ceiling. The value is that truncation is then ours and says so,
+ * rather than the backend's and silent. Raising Tempo's limit means replacing the config baked into
+ * the otel-lgtm image, which its Tempo rejects; carrying more than 2 KB of content wants a log
+ * record, where Loki's line limit is far higher, rather than a span attribute.
+ *
+ * The caps still differ per attribute because the attributes differ, and because a deployment with
+ * a Tempo of its own may raise the ceiling. `CONTENT_MARKER_HEADROOM` keeps the `[truncated N]`
+ * suffix inside the ceiling so the marker itself is not what gets cut.
  */
+/**
+ * The backend's ceiling on one attribute, less room for the truncation marker so the marker is not
+ * itself what gets cut. Tempo's `max_attribute_bytes` defaults to 2048; a deployment that raises it
+ * sets `OTEL_ATTRIBUTE_CEILING_BYTES` to match and the semantic caps below take effect.
+ */
+export function attributeCeiling(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env.OTEL_ATTRIBUTE_CEILING_BYTES)
+  return (Number.isFinite(raw) && raw > 0 ? raw : 2_048) - 48
+}
+
 export const CONTENT_ATTRIBUTE_CAPS: Readonly<Record<string, number>> = {
   'app.turn.question': 4_096,
   'app.turn.answer': 16_384,
@@ -64,6 +83,10 @@ export const CONTENT_ATTRIBUTE_CAPS: Readonly<Record<string, number>> = {
   // The largest single thing in a turn and the reason the caps are per attribute: this is the
   // evidence as the model reads it, set once on the turn span rather than per round.
   'app.evidence.text': 65_536,
+  // The literal message array as the loop last held it. Append-only within a turn, so the final
+  // state is a superset of every earlier one: captured once at the end rather than per round, which
+  // is what keeps a six-round turn from storing its own evidence six times.
+  'app.model.messages': 262_144,
   'app.seed.names': 2_048,
 }
 
@@ -73,11 +96,15 @@ export const CONTENT_ATTRIBUTES: ReadonlySet<string> = new Set(Object.keys(CONTE
 /** An attribute with no declared cap is not a content attribute; this is the floor if one appears. */
 export const CONTENT_ATTRIBUTE_DEFAULT_MAX = 2_048
 
-export function capFor(key: string): number {
-  return (
+/**
+ * What an attribute may reach: the smaller of what it needs and what the backend will carry. The
+ * two are separate because the first is a property of the data and the second of the deployment.
+ */
+export function capFor(key: string, env: NodeJS.ProcessEnv = process.env): number {
+  const declared =
     CONTENT_ATTRIBUTE_CAPS[key as keyof typeof CONTENT_ATTRIBUTE_CAPS] ??
     CONTENT_ATTRIBUTE_DEFAULT_MAX
-  )
+  return Math.min(declared, attributeCeiling(env))
 }
 
 /** Truncates to the cap and marks what was cut, so a reader never mistakes a prefix for the whole. */
