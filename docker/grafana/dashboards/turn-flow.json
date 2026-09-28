@@ -107,13 +107,49 @@
       "options": {}
     },
     {
+      "id": 8,
+      "type": "logs",
+      "title": "The full request the model was sent (developer stack only)",
+      "description": "Tempo truncates a span attribute at 2048 bytes, so app.model.messages on the turn span carries the opening of the request and a count of what was cut. The whole array is here, stamped with the trace and span id by the OpenTelemetry bridge: expand a line, or add | trace_id=\"...\" to pin it to the turn above. Present only on a developer stack, where TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test; everywhere else the record is never written and the body limit of 160 bytes applies as it does to every other log.",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "expr": "{service_name=\"projectA\"} | app_content_kind=\"messages\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none",
+        "enableLogDetails": true
+      }
+    },
+    {
       "id": 4,
       "type": "table",
       "title": "Model calls: the provider leg of each round",
       "description": "The outbound call to the gateway. Duration here against the round duration above separates model latency from tool latency.",
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 37,
         "w": 24,
         "h": 7
       },
@@ -143,7 +179,7 @@
       "description": "app_turns_total, split by the scope the classifier assigned, the state the run ended in, and whether the evidence gate released the answer.",
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 44,
         "w": 12,
         "h": 8
       },
@@ -170,7 +206,7 @@
       "description": "app_gate_withheld_total. A mechanism appearing here that is not a quoted comment means a budget or the verifier removed the last piece of evidence for a sentence.",
       "gridPos": {
         "x": 12,
-        "y": 34,
+        "y": 44,
         "w": 12,
         "h": 8
       },
@@ -197,7 +233,7 @@
       "description": "The catalogued events a turn can raise: injection.suspected, answer.claim_withheld, policy.enforced, canary.followed, question.url_requested, content.url_masked, content.pii_masked, egress.forbidden, error.unhandled. Fields are catalogue-capped, so no request content rides here regardless of the developer flag.",
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 52,
         "w": 24,
         "h": 9
       },
