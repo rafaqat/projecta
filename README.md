@@ -46,6 +46,7 @@ keycloak, web, worker. There is a **make doctor** to check if you have everythin
 | `make workspace NAME="Team A" OWNER=developer@example.test` | a workspace for a person who has signed in once              |
 | `make redeploy`                                             | rebuild the images, re-sign the gateway policy, restart the gateway and app |
 | `make bridge` / `make unbridge`                             | publish the llm-gateway on `127.0.0.1:8787` for a run from source, then close it |
+| `make dep PKG=name@version`                                 | add a runtime dependency; resolves the lockfile in the image's Linux, because `npm install` on macOS drops a transitive optional of `@tailwindcss/oxide-wasm32-wasi` and `npm ci` then refuses the lockfile |
 | `make evals`                                                | run the deterministic eval suites (correctness, robustness, adversarial) from `evals/harness`; reports each tier's metrics against its target and ratchets against the baseline (`evals/runs/latest.json`) |
 
 ## Profiles
