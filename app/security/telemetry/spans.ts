@@ -1,4 +1,10 @@
-import { SpanStatusCode, trace, type Attributes, type Span } from '@opentelemetry/api'
+import {
+  context as otelContext,
+  SpanStatusCode,
+  trace,
+  type Attributes,
+  type Span,
+} from '@opentelemetry/api'
 import { contentTelemetryEnabled, contentValue } from '#app/security/telemetry/debug_content'
 
 /**
@@ -37,11 +43,17 @@ export async function withSpan<T>(
 }
 
 /**
- * A span the caller ends itself. The agent loop is an async generator, so its rounds cannot be
- * wrapped in a callback without changing how it yields; they start and end a span instead.
+ * A span the caller ends itself, optionally under an explicit parent.
+ *
+ * The turn and the agent loop are async generators. OpenTelemetry's context is bound to the async
+ * execution, and a generator suspends at every yield and resumes on the consumer's stack, so the
+ * context that was active when a span opened is gone by the time the next round runs. Relying on
+ * the ambient context therefore produced a flat trace: every span a sibling of the HTTP span,
+ * lost among the database spans, with no loop to read. The parent is passed explicitly instead.
  */
-export function startSpan(name: string, attributes: Attributes = {}): Span {
-  return tracer().startSpan(name, { attributes })
+export function startSpan(name: string, attributes: Attributes = {}, parent?: Span): Span {
+  const ctx = parent ? trace.setSpan(otelContext.active(), parent) : otelContext.active()
+  return tracer().startSpan(name, { attributes }, ctx)
 }
 
 /** The active span, for attaching a fact discovered after the span was opened. */

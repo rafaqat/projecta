@@ -416,6 +416,7 @@ export class InProcessOrchestrator implements Orchestrator {
           strict: input.strict,
           limits: this.deps.limits,
           call: input.call,
+          parentSpan: turnSpan,
         },
         signal
       )) {

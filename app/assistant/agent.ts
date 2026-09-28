@@ -78,6 +78,11 @@ export interface AgentInput {
   strict?: { invalidEntities: string[] }
   limits?: Partial<AgentLimits>
   call?: CallContext
+  /**
+   * The turn's span, so each round nests under it. Passed rather than taken from the ambient
+   * context: this is a generator, and the context does not survive a yield (spans.ts).
+   */
+  parentSpan?: Span
 }
 
 export interface PreRun {
@@ -107,11 +112,15 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
     for (const run of input.preRuns ?? [])
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
     for (;;) {
-      round = startSpan('agent.round', {
-        'app.agent.round': iterations + 1,
-        'app.agent.iterations': iterations,
-        ...contentAttributes({ 'app.turn.question': input.question }),
-      })
+      round = startSpan(
+        'agent.round',
+        {
+          'app.agent.round': iterations + 1,
+          'app.agent.iterations': iterations,
+          ...contentAttributes({ 'app.turn.question': input.question }),
+        },
+        input.parentSpan
+      )
       const assistant: ContentBlock[] = []
       const toolUses: Array<{ id: string; name: string; input: unknown }> = []
       let textSoFar = ''
@@ -213,11 +222,15 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           })
           continue
         }
-        const toolSpan = startSpan('agent.tool', {
-          'app.tool.name': use.name,
-          'app.agent.round': iterations,
-          ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
-        })
+        const toolSpan = startSpan(
+          'agent.tool',
+          {
+            'app.tool.name': use.name,
+            'app.agent.round': iterations,
+            ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
+          },
+          round
+        )
         const outcome = await withTimeout(tool.run(use.input), limits.toolTimeoutMs, upstream)
         toolSpan.setAttributes({ 'app.tool.status': outcome.status })
         toolSpan.end()
