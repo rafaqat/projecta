@@ -12,6 +12,7 @@ import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
 import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { logTurnContent } from '#app/security/telemetry/content_log'
 import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
@@ -296,10 +297,11 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
     // per round. It overlaps the evidence text and the tool outputs on their own spans by design:
     // those answer "what was retrieved" and "what did this tool return", this answers "what was in
     // the request", and a reader chasing a model's behaviour wants the request as it was sent.
-    annotate(
-      input.parentSpan,
-      contentAttributes({ 'app.model.messages': JSON.stringify(messages) })
-    )
+    const request = JSON.stringify(messages)
+    // The span carries what fits (Tempo cuts at 2 KB and says nothing, so the cap is ours and
+    // marked); the log record carries the whole of it, joined to this trace by trace id.
+    annotate(input.parentSpan, contentAttributes({ 'app.model.messages': request }))
+    logTurnContent('messages', request, input.call?.requestId)
     clearTimeout(timer)
   }
 }

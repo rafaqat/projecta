@@ -27,6 +27,7 @@ processors:
       - db.operation.name
       - db.namespace
       - error.type
+      - app.content.kind
       - app.error.code
       - app.error.cause
       - app.error.hash

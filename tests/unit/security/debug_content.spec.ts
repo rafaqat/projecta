@@ -7,6 +7,7 @@ import {
   CONTENT_ATTRIBUTE_CAPS,
 } from '#app/security/telemetry/debug_content'
 import { evaluateBootGuards } from '#app/security/boot_guards'
+import { exportedBodyOf } from '#app/security/telemetry/log_records'
 
 /**
  * Content telemetry exists for debugging and security operations on a developer's own stack: the
@@ -84,5 +85,47 @@ test.group('content attribute caps', () => {
     // ceiling then applies to it like any other.
     assert.equal(capFor('app.turn.not_declared'), 2_000)
     assert.equal(capFor('app.turn.not_declared', { OTEL_ATTRIBUTE_CEILING_BYTES: '524288' }), 2_048)
+  })
+})
+
+/**
+ * The 160-byte body limit is what stops an exception message leaving inside a `msg`. Turn content
+ * is the single named exception to it, and the exception has to stay single: this asserts an
+ * ordinary record is still cut, that one carrying an exception is still reduced to type, code and
+ * hash, and that only a record declaring `app.content.kind` keeps its whole body.
+ */
+test.group('the log body limit has exactly one exception', () => {
+  test('content records keep their body; nothing else does', ({ assert }) => {
+    const long = 'x'.repeat(5_000)
+    const before = process.env.TELEMETRY_DEBUG_CONTENT
+    const beforeEnv = process.env.APP_ENV
+    process.env.TELEMETRY_DEBUG_CONTENT = '1'
+    process.env.APP_ENV = 'local'
+    try {
+      assert.equal(exportedBodyOf({ 'app.content.kind': 'messages' }, long).length, 5_000)
+      assert.equal(exportedBodyOf({}, long).length, 160)
+      // An exception is described, never quoted, content flag or not.
+      const described = exportedBodyOf({ err: { name: 'Error', code: 'E_X', message: long } }, long)
+      assert.notInclude(described, 'xxxx')
+      assert.include(described, 'E_X')
+    } finally {
+      if (before === undefined) delete process.env.TELEMETRY_DEBUG_CONTENT
+      else process.env.TELEMETRY_DEBUG_CONTENT = before
+      if (beforeEnv === undefined) delete process.env.APP_ENV
+      else process.env.APP_ENV = beforeEnv
+    }
+  })
+
+  test('a content record is cut like any other when the flag is off', ({ assert }) => {
+    const before = process.env.TELEMETRY_DEBUG_CONTENT
+    delete process.env.TELEMETRY_DEBUG_CONTENT
+    try {
+      assert.equal(
+        exportedBodyOf({ 'app.content.kind': 'messages' }, 'x'.repeat(5_000)).length,
+        160
+      )
+    } finally {
+      if (before !== undefined) process.env.TELEMETRY_DEBUG_CONTENT = before
+    }
   })
 })
