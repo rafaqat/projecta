@@ -39,26 +39,47 @@ export function contentTelemetryEnabled(
 }
 
 /**
- * Attributes that carry content. They are absent from the two standing allowlists and admitted
- * only while `contentTelemetryEnabled()` holds, so the default build exports none of them.
+ * Attributes that carry content, each with the size it is allowed to reach. They are absent from
+ * the two standing allowlists and admitted only while `contentTelemetryEnabled()` holds, so the
+ * default build exports none of them.
+ *
+ * The caps are per attribute because the attributes are not alike. A seed list is a handful of
+ * identifiers; an evidence pack is a dozen paths; a tool result or an answer is prose and runs
+ * long. One number for all of them was either too small for the long ones or wastefully large for
+ * the short ones, and the first version clipped evidence packs silently at 2 KB.
+ *
+ * Nothing here is a platform limit. The SDK's own `attributeValueLengthLimit` defaults to
+ * `Infinity`, the Collector accepts 4 MiB per message and Tempo allows megabytes per trace. What
+ * these caps guard is repetition: an attribute set once per round is carried once per round, and
+ * the turn's message array grows with every tool result it accumulates. Large content belongs on
+ * the `turn` span, where it appears once.
  */
-export const CONTENT_ATTRIBUTES: ReadonlySet<string> = new Set([
-  'app.turn.question',
-  'app.turn.answer',
-  'app.turn.withheld',
-  'app.tool.input',
-  'app.tool.output',
-  'app.evidence.paths',
-  'app.seed.names',
-  'app.scope.reason',
-])
+export const CONTENT_ATTRIBUTE_CAPS: Readonly<Record<string, number>> = {
+  'app.turn.question': 4_096,
+  'app.turn.answer': 16_384,
+  'app.turn.withheld': 8_192,
+  'app.tool.input': 4_096,
+  'app.tool.output': 16_384,
+  'app.evidence.paths': 16_384,
+  'app.seed.names': 2_048,
+  'app.scope.reason': 2_048,
+}
 
-/** The cap on any one content attribute, so a large evidence pack cannot fill the exporter. */
-export const CONTENT_ATTRIBUTE_MAX = 2048
+/** Derived, so the allowlist and the caps cannot disagree about which attributes carry content. */
+export const CONTENT_ATTRIBUTES: ReadonlySet<string> = new Set(Object.keys(CONTENT_ATTRIBUTE_CAPS))
+
+/** An attribute with no declared cap is not a content attribute; this is the floor if one appears. */
+export const CONTENT_ATTRIBUTE_DEFAULT_MAX = 2_048
+
+export function capFor(key: string): number {
+  return (
+    CONTENT_ATTRIBUTE_CAPS[key as keyof typeof CONTENT_ATTRIBUTE_CAPS] ??
+    CONTENT_ATTRIBUTE_DEFAULT_MAX
+  )
+}
 
 /** Truncates to the cap and marks what was cut, so a reader never mistakes a prefix for the whole. */
-export function contentValue(value: string): string {
-  return value.length <= CONTENT_ATTRIBUTE_MAX
-    ? value
-    : `${value.slice(0, CONTENT_ATTRIBUTE_MAX)} [truncated ${value.length - CONTENT_ATTRIBUTE_MAX}]`
+export function contentValue(key: string, value: string): string {
+  const cap = capFor(key)
+  return value.length <= cap ? value : `${value.slice(0, cap)} [truncated ${value.length - cap}]`
 }

@@ -117,7 +117,9 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         {
           'app.agent.round': iterations + 1,
           'app.agent.iterations': iterations,
-          ...contentAttributes({ 'app.turn.question': input.question }),
+          // The question is on the turn span, which is this span's parent. Repeating it per round
+          // carried it seven times through a six-round turn for nothing a nested trace does not
+          // already show.
         },
         input.parentSpan
       )

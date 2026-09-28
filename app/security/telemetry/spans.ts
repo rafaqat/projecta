@@ -70,7 +70,7 @@ export function contentAttributes(values: Record<string, string | undefined>): A
   if (!contentTelemetryEnabled()) return {}
   const attributes: Attributes = {}
   for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined && value !== '') attributes[key] = contentValue(value)
+    if (value !== undefined && value !== '') attributes[key] = contentValue(key, value)
   }
   return attributes
 }
