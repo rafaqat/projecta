@@ -59,7 +59,9 @@ paths, seed names. Exported only while all three of the following hold:
 - the Collector's own allowlist carries the attributes, which a deployed Collector does not.
 
 The third key is held outside the application deliberately, so no single mistake inside the
-application exports a prompt. Values are capped at 2 KB and marked when truncated.
+application exports a prompt. Values are capped and marked when truncated; the cap belongs to the
+attribute, because a seed list and a tool result are not the same size of thing, and the numbers live
+beside the attribute list in code rather than here.
 
 The boot guard refuses to start uat or production with the flag set, so a flag that escapes into a
 deployed environment is a loud failure at boot rather than a quiet one at export.
