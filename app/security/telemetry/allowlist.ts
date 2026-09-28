@@ -53,7 +53,6 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.retrieval.seed_source',
   'app.retrieval.status',
   'app.retrieval.seeds',
-  'app.retrieval.seeds',
   'app.retrieval.items',
   'app.retrieval.chunks',
   'app.agent.round',
@@ -62,6 +61,9 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.agent.iterations',
   'app.tool.name',
   'app.tool.status',
+  // Which system prompt produced the answer: the file's id, its version and the head of its
+  // sha256, which configHash already covers. Identifies the text without carrying it.
+  'app.model.system_prompt',
   'app.gate.mechanism',
   // Security events as span events, and log records (app/security/telemetry/log_records.ts).
   'app.security.event',
@@ -74,5 +76,4 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.ingest.step',
   'app.run.state',
   'app.gate.released',
-  'app.gate.mechanism',
 ])

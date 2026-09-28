@@ -60,6 +60,7 @@ processors:
       - app.agent.iterations
       - app.tool.name
       - app.tool.status
+      - app.model.system_prompt
       - app.gate.mechanism
       # DEVELOPER STACK ONLY. These carry request content and exist so a turn can be reconstructed
       # on a machine whose repository and questions belong to the person reading them. The
@@ -73,6 +74,7 @@ processors:
       - app.tool.input
       - app.tool.output
       - app.evidence.paths
+      - app.evidence.text
       - app.seed.names
       - app.security.event
       - app.security.severity
@@ -83,7 +85,6 @@ processors:
       - app.ingest.step
       - app.run.state
       - app.gate.released
-      - app.gate.mechanism
       - url.scheme
       - service.name
       - service.version

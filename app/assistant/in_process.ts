@@ -89,6 +89,19 @@ export interface InProcessDeps {
   canarySampling?: { rate: number; draw?: () => number }
 }
 
+/**
+ * The evidence as the model reads it: each block's title and its text, in order. Not the provider's
+ * JSON, because the question this answers is "what did the model see", and it saw prose.
+ */
+function renderEvidence(blocks: SearchResultBlock[]): string {
+  return blocks
+    .map((block) => {
+      const body = block.content.map((part) => (part.type === 'text' ? part.text : '')).join('\n')
+      return `[${block.source}] ${block.title}\n${body}`
+    })
+    .join('\n\n')
+}
+
 export class InProcessOrchestrator implements Orchestrator {
   constructor(private readonly deps: InProcessDeps) {}
 
@@ -409,6 +422,13 @@ export class InProcessOrchestrator implements Orchestrator {
       let narrationDropped = 0
 
       viewSource = 'model'
+      // What the model is about to read, recorded once: the system prompt by identity, and the
+      // evidence blocks as prose rather than as the provider's JSON. With the tool results already
+      // on their own spans, the whole of what the model saw is reconstructable in span order.
+      annotate(turnSpan, {
+        'app.model.system_prompt': `${PROMPTS.system.id}.v${PROMPTS.system.version}#${PROMPTS.system.sha256.slice(0, 12)}`,
+        ...contentAttributes({ 'app.evidence.text': renderEvidence(evidenceBlocks) }),
+      })
       for await (const event of runAgent(
         {
           model: this.deps.model,

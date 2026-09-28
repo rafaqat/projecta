@@ -61,6 +61,9 @@ export const CONTENT_ATTRIBUTE_CAPS: Readonly<Record<string, number>> = {
   'app.tool.input': 4_096,
   'app.tool.output': 16_384,
   'app.evidence.paths': 16_384,
+  // The largest single thing in a turn and the reason the caps are per attribute: this is the
+  // evidence as the model reads it, set once on the turn span rather than per round.
+  'app.evidence.text': 65_536,
   'app.seed.names': 2_048,
 }
 
