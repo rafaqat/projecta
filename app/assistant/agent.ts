@@ -10,6 +10,7 @@ import type { ContinuationPayload } from '#app/assistant/orchestrator'
 import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
+import { classifyModelError } from '#app/assistant/model_error'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
 
@@ -51,6 +52,8 @@ export type AgentEvent =
       reason: 'end_turn' | 'iterations' | 'deadline' | 'aborted' | 'model_error' | 'output_blocked'
       /** Present for model_error: the error's code, never its message. */
       errorCode?: string
+      /** Present for model_error when a transport failure wrapped an errno (`EAI_AGAIN`, ...). */
+      errorCause?: string
       /** Present for output_blocked: the gateway rule that ended the answer. */
       rule?: string
     }
@@ -133,11 +136,7 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           }
         } else {
           // Never swallowed: the failure is reported with a code and a message hash.
-          yield {
-            type: 'done',
-            reason: 'model_error',
-            errorCode: reportModelError(error, input.call),
-          }
+          yield { type: 'done', reason: 'model_error', ...reportModelError(error, input.call) }
         }
         return
       }
@@ -281,20 +280,24 @@ async function withTimeout<T>(
   }
 }
 
-/** Emits error.unhandled for a failed model call and returns the code it carried. */
-function reportModelError(error: unknown, call: CallContext | undefined): string {
-  const errorCode = (error as { code?: unknown }).code
-  const code =
-    typeof errorCode === 'string'
-      ? errorCode
-      : `E_MODEL_${(error as { name?: string }).name ?? 'ERROR'}`
+/**
+ * Emits error.unhandled for a failed model call and returns what the turn reports.
+ *
+ * The code and the errno are the whole of what survives export (SEC-14), so they are what the run
+ * status carries too: a reader of the console and a reader of the dashboard name the same failure.
+ */
+function reportModelError(
+  error: unknown,
+  call: CallContext | undefined
+): { errorCode: string; errorCause?: string } {
+  const facts = classifyModelError(error)
   const message = error instanceof Error ? error.message : String(error)
-  const status = (error as { status?: unknown }).status
   const hash = createHash('sha256').update(message).digest('hex').slice(0, 16)
   securityEvents.emit('error.unhandled', {
-    errorCode: code,
+    errorCode: facts.code,
+    errorCause: facts.cause ?? '',
     errorHash: hash,
-    status: typeof status === 'number' ? status : 502,
+    status: facts.status ?? 502,
     requestId: call?.requestId ?? '',
   })
   // The hash alone cannot be read back (UAT 2026-09-16: three E_MODEL_Error with nothing to
@@ -302,14 +305,15 @@ function reportModelError(error: unknown, call: CallContext | undefined): string
   // log, which the collector redacts. Never the request or the answer.
   logger.warn(
     {
-      errorCode: code,
+      errorCode: facts.code,
+      errorCause: facts.cause ?? null,
       errorHash: hash,
       errorName: (error as { name?: string }).name ?? 'Error',
-      status: typeof status === 'number' ? status : null,
+      status: facts.status ?? null,
       message: message.slice(0, 240),
       requestId: call?.requestId ?? '',
     },
     'model call failed'
   )
-  return code
+  return { errorCode: facts.code, ...(facts.cause ? { errorCause: facts.cause } : {}) }
 }

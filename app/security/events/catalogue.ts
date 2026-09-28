@@ -104,9 +104,11 @@ export const SECURITY_EVENT_CATALOGUE = define({
     fields: ['component', 'configHash', 'previousConfigHash'],
     alert: 'any change outside a deployment',
   },
+  // errorCause is the operating system's errno under a transport failure (EAI_AGAIN, ECONNREFUSED):
+  // a closed set like the code, and the part that says whether the failure was ours or the network's.
   'error.unhandled': {
     severity: 'warning',
-    fields: ['errorCode', 'errorHash', 'status', 'requestId'],
+    fields: ['errorCode', 'errorCause', 'errorHash', 'status', 'requestId'],
     alert: 'more than 50 in 5 minutes',
   },
   // Content the egress/inbound guards cleaned or rejected, surfaced so a spike is alertable. Counts,
