@@ -100,6 +100,11 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
   const messages = initialMessages(input)
   const tools = new Map(input.tools.map((t) => [t.spec.name, t]))
   let iterations = 0
+  // Passes through the loop, which is what a round span represents. Not the same as `iterations`,
+  // which counts only the rounds that executed tools and is what the cap is measured against: the
+  // round that refuses a sixth tool call and the round that then answers both leave `iterations` at
+  // five, so numbering spans by it gave two spans the same round.
+  let pass = 0
   let toolsAllowed = true
   // The loop's spans (ADR-023). One per round, closed on every exit path including a throw, so a
   // turn that ends mid-round leaves a span saying which round and why rather than nothing.
@@ -131,10 +136,11 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
     }
     for (;;) {
+      pass += 1
       round = startSpan(
         'agent.round',
         {
-          'app.agent.round': iterations + 1,
+          'app.agent.round': pass,
           'app.agent.iterations': iterations,
           // The question is on the turn span, which is this span's parent. Repeating it per round
           // carried it seven times through a six-round turn for nothing a nested trace does not
@@ -247,7 +253,7 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'agent.tool',
           {
             'app.tool.name': use.name,
-            'app.agent.round': iterations,
+            'app.agent.round': pass,
             ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
           },
           round
