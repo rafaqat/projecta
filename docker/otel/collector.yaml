@@ -63,21 +63,11 @@ processors:
       - app.tool.status
       - app.model.system_prompt
       - app.gate.mechanism
-      # DEVELOPER STACK ONLY. These carry request content and exist so a turn can be reconstructed
-      # on a machine whose repository and questions belong to the person reading them. The
-      # application refuses to emit them unless APP_ENV is local or test AND
-      # TELEMETRY_DEBUG_CONTENT=1 (app/security/telemetry/debug_content.ts), and the boot guard
-      # refuses to start uat or production with that flag set. A deployed collector must not carry
-      # this block: it is the third key, and the only one held outside the application.
-      - app.turn.question
-      - app.turn.answer
-      - app.turn.withheld
-      - app.tool.input
-      - app.tool.output
-      - app.evidence.paths
-      - app.evidence.text
-      - app.model.messages
-      - app.seed.names
+      # Content does not ride span attributes: Tempo truncates one at 2048 bytes, so a question or
+      # a request array arrived as its first 2 KB. It rides a log record's body instead
+      # (app/security/telemetry/content_log.ts), which this label names and which the application
+      # writes only when APP_ENV is local or test AND TELEMETRY_DEBUG_CONTENT=1. A deployed
+      # collector need not carry `app.content.kind`; without it the records lose their label.
       - app.security.event
       - app.security.severity
       - app.repository.id

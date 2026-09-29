@@ -1,7 +1,7 @@
 {
   "uid": "cia-turn-flow",
   "title": "Turn flow: question, retrieval, agent loop, tools",
-  "description": "One turn end to end, for debugging and security operations. Spans come from app/security/telemetry/spans.ts. Structural attributes (counts, labels, statuses) are always exported. Question text, evidence paths and tool arguments appear only on a developer stack with TELEMETRY_DEBUG_CONTENT=1 and APP_ENV local or test; uat and production refuse to start with that flag, and a deployed collector does not allowlist those attributes.",
+  "description": "A turn, by the question you are asking of it. Reading one turn is a log, so the narrative is first. How turns behave is a metric. Why one was slow is a trace, which is the only question a waterfall answers better than a log line. Spans carry structure and timing and no text: Tempo truncates an attribute at 2048 bytes, so content rides a log record instead, written only on a developer stack (ADR-0023).",
   "tags": [
     "projectA",
     "turn",
@@ -17,105 +17,28 @@
   },
   "panels": [
     {
-      "id": 1,
-      "type": "table",
-      "title": "Turns: pick one to open its flow",
-      "description": "One row per turn span. run_handle matches the run the interface shows and the turns table, so a turn can be followed from here into the application. Click the trace id for the waterfall: turn, scope, retrieval, each agent round, each tool.",
+      "id": 100,
+      "type": "row",
+      "title": "Reading a turn: logs",
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 9
+        "h": 1
       },
-      "datasource": {
-        "type": "tempo",
-        "uid": "tempo"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "tempo"
-          },
-          "refId": "A",
-          "queryType": "traceql",
-          "query": "{ name = \"turn\" } | select(span.app.turn.run_handle, span.app.turn.scope_label, span.app.turn.run_state, span.app.turn.reason, span.app.retrieval.seed_source, span.app.retrieval.status, span.app.retrieval.items, span.app.turn.question)",
-          "limit": 50,
-          "tableType": "spans"
-        }
-      ],
-      "options": {}
+      "panels": []
     },
     {
-      "id": 2,
-      "type": "table",
-      "title": "Agent rounds: what each round did and why it ended",
-      "description": "One row per round of the tool loop. stop_reason says how the round ended: tool_use (it asked for tools), end_turn, iterations, deadline, aborted, model_error, output_blocked, or tool_budget_exhausted when the cap refused a sixth round.",
-      "gridPos": {
-        "x": 0,
-        "y": 9,
-        "w": 24,
-        "h": 9
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "tempo"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "tempo"
-          },
-          "refId": "A",
-          "queryType": "traceql",
-          "query": "{ name = \"agent.round\" } | select(span.app.agent.round, span.app.agent.stop_reason, span.app.agent.tools_requested, span.app.agent.iterations, span.app.error.code)",
-          "limit": 50,
-          "tableType": "spans"
-        }
-      ],
-      "options": {}
-    },
-    {
-      "id": 3,
-      "type": "table",
-      "title": "Tool calls: what the model asked the agent for",
-      "description": "One row per tool the model requested and the agent executed, with the round it belongs to and how it ended. status: ok, timeout, error, refused, unknown, or index for a pre-run the system ran before the model's first turn. Arguments appear only on a developer stack.",
-      "gridPos": {
-        "x": 0,
-        "y": 18,
-        "w": 24,
-        "h": 9
-      },
-      "datasource": {
-        "type": "tempo",
-        "uid": "tempo"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "tempo",
-            "uid": "tempo"
-          },
-          "refId": "A",
-          "queryType": "traceql",
-          "query": "{ name = \"agent.tool\" } | select(span.app.tool.name, span.app.tool.status, span.app.agent.round, span.app.tool.input)",
-          "limit": 50,
-          "tableType": "spans"
-        }
-      ],
-      "options": {}
-    },
-    {
-      "id": 8,
+      "id": 1,
       "type": "logs",
-      "title": "The full request the model was sent (developer stack only)",
-      "description": "Tempo truncates a span attribute at 2048 bytes, so app.model.messages on the turn span carries the opening of the request and a count of what was cut. The whole array is here, stamped with the trace and span id by the OpenTelemetry bridge: expand a line, or add | trace_id=\"...\" to pin it to the turn above. Present only on a developer stack, where TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test; everywhere else the record is never written and the body limit of 160 bytes applies as it does to every other log.",
+      "title": "Every turn, as a log",
+      "description": "One record per turn: the question, the scope decision and the rule that made it, retrieval and the evidence it chose, the seeds, then each round with the tool it ran, and how the turn ended. This is the readable account; the trace panels below are for when the question is timing. Developer stack only: the record is written when TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test, and nowhere else, so on a deployed stack this panel is empty and that is correct rather than broken.",
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 1,
         "w": 24,
-        "h": 10
+        "h": 12
       },
       "datasource": {
         "type": "loki",
@@ -128,7 +51,7 @@
             "uid": "loki"
           },
           "refId": "A",
-          "expr": "{service_name=\"projectA\"} | app_content_kind=\"messages\"",
+          "expr": "{service_name=\"projectA\"} | app_content_kind=\"turn\"",
           "queryType": "range"
         }
       ],
@@ -143,13 +66,183 @@
       }
     },
     {
-      "id": 4,
-      "type": "table",
-      "title": "Model calls: the provider leg of each round",
-      "description": "The outbound call to the gateway. Duration here against the round duration above separates model latency from tool latency.",
+      "id": 2,
+      "type": "logs",
+      "title": "The request, the answer, and what the gate withheld",
+      "description": "app_content_kind: \"messages\" is the literal array the model was sent, whole, which a span attribute cannot hold because Tempo truncates one at 2048 bytes; \"answer\" is what was released; \"withheld\" is what the evidence gate held back and appears in no other record, since the request array is what the model was sent rather than what it produced. Developer stack only: the record is written when TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test, and nowhere else, so on a deployed stack this panel is empty and that is correct rather than broken.",
       "gridPos": {
         "x": 0,
-        "y": 37,
+        "y": 13,
+        "w": 24,
+        "h": 11
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "expr": "{service_name=\"projectA\"} | app_content_kind=~\"messages|answer|withheld\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none",
+        "enableLogDetails": true
+      }
+    },
+    {
+      "id": 101,
+      "type": "row",
+      "title": "Why a turn was slow: traces",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Turns: pick one to open its flow",
+      "description": "Spans carry the structure and timing of a turn and none of its text. Click the trace id for the waterfall, or the run handle for every log record of that turn.",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"turn\" } | select(span.app.turn.run_handle, span.app.turn.scope_label, span.app.turn.run_state, span.app.turn.reason, span.app.turn.citations, span.app.retrieval.seed_source, span.app.retrieval.items)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "app.turn.run_handle"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Turn log: this turn as a log, and the request it sent",
+                    "url": "/explore?schemaVersion=1&panes=%7B%22a1%22%3A%7B%22datasource%22%3A%22loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22datasource%22%3A%7B%22type%22%3A%22loki%22%2C%22uid%22%3A%22loki%22%7D%2C%22expr%22%3A%22%7Bservice_name%3D%5C%22projectA%5C%22%7D%20%7C%20app_turn_run_handle%3D%5C%22%24%7B__value.raw%7D%5C%22%22%2C%22editorMode%22%3A%22code%22%2C%22queryType%22%3A%22range%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-24h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Agent rounds: what each round did and why it ended",
+      "description": "One row per pass through the loop. app.agent.round counts passes; app.agent.iterations counts only the rounds that ran tools, which is what the cap is measured against, so a capped turn shows two rounds at the same iteration count. stop_reason: tool_use, end_turn, iterations, deadline, aborted, model_error, output_blocked, or tool_budget_exhausted when a round was refused more tools.",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"agent.round\" } | select(span.app.agent.round, span.app.agent.iterations, span.app.agent.stop_reason, span.app.agent.tools_requested, span.app.error.code)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Tool calls: name, status and the round they belong to",
+      "description": "status: ok, timeout, error, refused, unknown, or index for a pre-run the system ran before the model's first turn (round 0). Arguments and results are not here; they are in the request array above.",
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"agent.tool\" } | select(span.app.tool.name, span.app.tool.status, span.app.agent.round)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Model calls: the provider leg of each round",
+      "description": "The outbound call to the gateway. Its duration against the round duration above separates model latency from tool latency, which is the one question a waterfall answers better than a log.",
+      "gridPos": {
+        "x": 0,
+        "y": 49,
         "w": 24,
         "h": 7
       },
@@ -165,21 +258,38 @@
           },
           "refId": "A",
           "queryType": "traceql",
-          "query": "{ span.server.address = \"llm-gateway\" } | select(span.http.request.method, span.server.address, status, statusMessage)",
+          "query": "{ span.server.address = \"llm-gateway\" } | select(span.http.request.method, status, statusMessage)",
           "limit": 50,
           "tableType": "spans"
         }
       ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "options": {}
     },
     {
-      "id": 5,
+      "id": 102,
+      "type": "row",
+      "title": "How turns behave: metrics",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
       "type": "timeseries",
       "title": "Turns per minute, by scope and outcome",
       "description": "app_turns_total, split by the scope the classifier assigned, the state the run ended in, and whether the evidence gate released the answer.",
       "gridPos": {
         "x": 0,
-        "y": 44,
+        "y": 57,
         "w": 12,
         "h": 8
       },
@@ -200,13 +310,13 @@
       ]
     },
     {
-      "id": 6,
+      "id": 8,
       "type": "timeseries",
       "title": "Withheld by the evidence gate, by mechanism",
-      "description": "app_gate_withheld_total. A mechanism appearing here that is not a quoted comment means a budget or the verifier removed the last piece of evidence for a sentence.",
+      "description": "app_gate_withheld_total. A mechanism other than a quoted comment means a budget or the verifier removed the last piece of evidence for a sentence.",
       "gridPos": {
         "x": 12,
-        "y": 44,
+        "y": 57,
         "w": 12,
         "h": 8
       },
@@ -227,13 +337,26 @@
       ]
     },
     {
-      "id": 7,
-      "type": "table",
-      "title": "Security events on the turn path (click trace to open the flow)",
-      "description": "The catalogued events a turn can raise: injection.suspected, answer.claim_withheld, policy.enforced, canary.followed, question.url_requested, content.url_masked, content.pii_masked, egress.forbidden, error.unhandled. Fields are catalogue-capped, so no request content rides here regardless of the developer flag.",
+      "id": 103,
+      "type": "row",
+      "title": "Security events on the turn path",
+      "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 65,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Catalogued events (click trace to open the flow)",
+      "description": "injection.suspected, answer.claim_withheld, policy.enforced, canary.followed, question.url_requested, content.url_masked, content.pii_masked, egress.forbidden, error.unhandled. Fields are catalogue-capped, so no request content rides here whatever the developer flag says.",
+      "gridPos": {
+        "x": 0,
+        "y": 66,
         "w": 24,
         "h": 9
       },

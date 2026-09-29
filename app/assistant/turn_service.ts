@@ -17,7 +17,8 @@ import { isAblated, testSeam } from '#app/security/ablation_switch'
 import { inScope, type Scope } from '#app/security/scope'
 import { newHandle } from '#app/security/handles'
 import { securityEvents } from '#app/security/events/index'
-import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { annotate, startSpan } from '#app/security/telemetry/spans'
+import { logTurnContent } from '#app/security/telemetry/content_log'
 
 /**
  * One turn end to end (design §6): thread lookup, continuation payload,
@@ -143,7 +144,6 @@ export async function* answerTurn(
   // only once the stream has ended and this is the scope that sees both (ADR-023).
   const turnSpan = startSpan('turn', {
     'app.turn.commit': commit.sha,
-    ...contentAttributes({ 'app.turn.question': req.question }),
   })
   input.turnSpan = turnSpan
   const orchestrator =
@@ -186,12 +186,12 @@ export async function* answerTurn(
       'app.turn.citations': citations.length,
       'app.turn.withheld_count': gate.outcome.withheld.length,
       ...(gate.outcome.withheldBy ? { 'app.gate.mechanism': gate.outcome.withheldBy } : {}),
-      ...contentAttributes({
-        'app.turn.answer': gate.outcome.released,
-        'app.turn.withheld': gate.outcome.withheld,
-      }),
     })
     turnSpan.end()
+    // The answer and what the gate held back. Neither is in the request array, which is what the
+    // model was sent rather than what it produced, so these are the only record of them.
+    logTurnContent('answer', gate.outcome.released, req.requestId, runId)
+    logTurnContent('withheld', gate.outcome.withheld, req.requestId, runId)
     deps.onTrace?.(trace)
     // The turn, its citations and the decision record land in one transaction (design §9).
     await inScope(scope, (trx) =>

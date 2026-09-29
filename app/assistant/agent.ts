@@ -11,7 +11,7 @@ import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
-import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { startSpan } from '#app/security/telemetry/spans'
 import { logTurnContent } from '#app/security/telemetry/content_log'
 import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
@@ -84,6 +84,8 @@ export interface AgentInput {
    * context: this is a generator, and the context does not survive a yield (spans.ts).
    */
   parentSpan?: Span
+  /** The turn's run handle, so its content records are findable by the identifier a reader has. */
+  runHandle?: string
 }
 
 export interface PreRun {
@@ -125,10 +127,6 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'app.tool.name': run.name,
           'app.tool.status': 'index',
           'app.agent.round': 0,
-          ...contentAttributes({
-            'app.tool.input': JSON.stringify(run.input ?? null),
-            'app.tool.output': JSON.stringify(run.content ?? null),
-          }),
         },
         input.parentSpan
       )
@@ -254,7 +252,6 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           {
             'app.tool.name': use.name,
             'app.agent.round': pass,
-            ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
           },
           round
         )
@@ -263,10 +260,6 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'app.tool.status': outcome.status,
           // What the model was handed back, beside what it asked for. Without this a trace shows
           // the request and the verdict and leaves the answer's input to inference.
-          ...contentAttributes({
-            'app.tool.output':
-              outcome.status === 'ok' ? JSON.stringify(outcome.content ?? null) : outcome.status,
-          }),
         })
         toolSpan.end()
         yield {
@@ -306,8 +299,7 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
     const request = JSON.stringify(messages)
     // The span carries what fits (Tempo cuts at 2 KB and says nothing, so the cap is ours and
     // marked); the log record carries the whole of it, joined to this trace by trace id.
-    annotate(input.parentSpan, contentAttributes({ 'app.model.messages': request }))
-    logTurnContent('messages', request, input.call?.requestId)
+    logTurnContent('messages', request, input.call?.requestId, input.runHandle)
     clearTimeout(timer)
   }
 }

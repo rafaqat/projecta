@@ -1,7 +1,6 @@
 import { test } from '@japa/runner'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { CONTENT_ATTRIBUTES } from '#app/security/telemetry/debug_content'
 import { SPAN_ATTRIBUTE_ALLOWLIST } from '#app/security/telemetry/allowlist'
 
 /**
@@ -9,8 +8,8 @@ import { SPAN_ATTRIBUTE_ALLOWLIST } from '#app/security/telemetry/allowlist'
  *
  * It reads as a capability the system has and a reader can look for, and it fails in exactly the
  * way ADR-0023 warns a missing entry fails: silently, because an attribute that is never set looks
- * identical to one that is filtered out. Ten keys had reached that state, `app.tool.output` and
- * `app.turn.answer` among them, each declared in two allowlists and produced by nothing.
+ * identical to one that is filtered out. Ten keys had reached that state, each declared in two
+ * allowlists and produced by nothing.
  *
  * So every `app.*` key the application declares must appear somewhere that could set it. The check
  * is textual rather than behavioural on purpose: it costs one directory walk, it runs without a
@@ -64,12 +63,5 @@ test.group('every declared attribute has a producer', () => {
       .filter((key) => !source.includes(`'${key}'`))
 
     assert.deepEqual(dead, [], 'allowlisted with nothing to write them')
-  })
-
-  test('no content attribute is capped and never written', async ({ assert }) => {
-    const source = await applicationSource()
-    const dead = [...CONTENT_ATTRIBUTES].filter((key) => !source.includes(`'${key}'`))
-
-    assert.deepEqual(dead, [], 'content attributes declared with nothing to write them')
   })
 })
