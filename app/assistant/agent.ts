@@ -11,6 +11,9 @@ import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
+import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { logTurnContent } from '#app/security/telemetry/content_log'
+import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
 
@@ -76,6 +79,11 @@ export interface AgentInput {
   strict?: { invalidEntities: string[] }
   limits?: Partial<AgentLimits>
   call?: CallContext
+  /**
+   * The turn's span, so each round nests under it. Passed rather than taken from the ambient
+   * context: this is a generator, and the context does not survive a yield (spans.ts).
+   */
+  parentSpan?: Span
 }
 
 export interface PreRun {
@@ -93,10 +101,47 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
   const tools = new Map(input.tools.map((t) => [t.spec.name, t]))
   let iterations = 0
   let toolsAllowed = true
+  // The loop's spans (ADR-023). One per round, closed on every exit path including a throw, so a
+  // turn that ends mid-round leaves a span saying which round and why rather than nothing.
+  let round: Span | undefined
+  const endRound = (attributes: Record<string, string | number | boolean> = {}) => {
+    round?.setAttributes(attributes)
+    round?.end()
+    round = undefined
+  }
   try {
-    for (const run of input.preRuns ?? [])
+    for (const run of input.preRuns ?? []) {
+      // The index answered before the model's first turn. It is a tool call in the transcript, so
+      // it is one in the trace too: without a span the dashboard shows a turn with 46 citations and
+      // no tool call, which reads as retrieval having found them.
+      const preSpan = startSpan(
+        'agent.tool',
+        {
+          'app.tool.name': run.name,
+          'app.tool.status': 'index',
+          'app.agent.round': 0,
+          ...contentAttributes({
+            'app.tool.input': JSON.stringify(run.input ?? null),
+            'app.tool.output': JSON.stringify(run.content ?? null),
+          }),
+        },
+        input.parentSpan
+      )
+      preSpan.end()
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
+    }
     for (;;) {
+      round = startSpan(
+        'agent.round',
+        {
+          'app.agent.round': iterations + 1,
+          'app.agent.iterations': iterations,
+          // The question is on the turn span, which is this span's parent. Repeating it per round
+          // carried it seven times through a six-round turn for nothing a nested trace does not
+          // already show.
+        },
+        input.parentSpan
+      )
       const assistant: ContentBlock[] = []
       const toolUses: Array<{ id: string; name: string; input: unknown }> = []
       let textSoFar = ''
@@ -126,26 +171,32 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         }
       } catch (error) {
         if (upstream.aborted) {
-          yield { type: 'done', reason: signal.aborted ? 'aborted' : 'deadline' }
+          const reason = signal.aborted ? 'aborted' : 'deadline'
+          endRound({ 'app.agent.stop_reason': reason })
+          yield { type: 'done', reason }
         } else if ((error as { code?: string }).code === 'E_OUTPUT_BLOCKED') {
           // The gateway ended the answer on an output rule: a decision, not a failure.
-          yield {
-            type: 'done',
-            reason: 'output_blocked',
-            rule: (error as { rule?: string }).rule ?? 'output',
-          }
+          const rule = (error as { rule?: string }).rule ?? 'output'
+          endRound({ 'app.agent.stop_reason': 'output_blocked', 'app.policy.rule': rule })
+          yield { type: 'done', reason: 'output_blocked', rule }
         } else {
           // Never swallowed: the failure is reported with a code and a message hash.
-          yield { type: 'done', reason: 'model_error', ...reportModelError(error, input.call) }
+          const facts = reportModelError(error, input.call)
+          endRound({ 'app.agent.stop_reason': 'model_error', 'app.error.code': facts.errorCode })
+          yield { type: 'done', reason: 'model_error', ...facts }
         }
         return
       }
       if (upstream.aborted) {
-        yield { type: 'done', reason: signal.aborted ? 'aborted' : 'deadline' }
+        const reason = signal.aborted ? 'aborted' : 'deadline'
+        endRound({ 'app.agent.stop_reason': reason })
+        yield { type: 'done', reason }
         return
       }
       if (stop !== 'tool_use' || toolUses.length === 0 || !toolsAllowed) {
-        yield { type: 'done', reason: toolsAllowed ? 'end_turn' : 'iterations' }
+        const reason = toolsAllowed ? 'end_turn' : 'iterations'
+        endRound({ 'app.agent.stop_reason': reason, 'app.agent.tools_requested': toolUses.length })
+        yield { type: 'done', reason }
         return
       }
       if (iterations >= limits.maxToolIterations) {
@@ -171,6 +222,10 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           }
         )
         toolsAllowed = false
+        endRound({
+          'app.agent.stop_reason': 'tool_budget_exhausted',
+          'app.agent.tools_requested': toolUses.length,
+        })
         continue
       }
       iterations++
@@ -188,7 +243,26 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           })
           continue
         }
+        const toolSpan = startSpan(
+          'agent.tool',
+          {
+            'app.tool.name': use.name,
+            'app.agent.round': iterations,
+            ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
+          },
+          round
+        )
         const outcome = await withTimeout(tool.run(use.input), limits.toolTimeoutMs, upstream)
+        toolSpan.setAttributes({
+          'app.tool.status': outcome.status,
+          // What the model was handed back, beside what it asked for. Without this a trace shows
+          // the request and the verdict and leaves the answer's input to inference.
+          ...contentAttributes({
+            'app.tool.output':
+              outcome.status === 'ok' ? JSON.stringify(outcome.content ?? null) : outcome.status,
+          }),
+        })
+        toolSpan.end()
         yield {
           type: 'tool',
           name: use.name,
@@ -210,8 +284,24 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         ...results.filter((b) => b.type !== 'tool_result'),
       ]
       messages.push({ role: 'assistant', content: assistant }, { role: 'user', content: ordered })
+      endRound({
+        'app.agent.stop_reason': 'tool_use',
+        'app.agent.tools_requested': toolUses.length,
+      })
     }
   } finally {
+    // A throw between rounds, or a consumer abandoning the generator, must not leak an open span.
+    endRound({ 'app.agent.stop_reason': 'incomplete' })
+    // The literal array the model was last sent. `messages` is append-only within a turn, so the
+    // final state contains every earlier one and capturing it here costs one copy rather than one
+    // per round. It overlaps the evidence text and the tool outputs on their own spans by design:
+    // those answer "what was retrieved" and "what did this tool return", this answers "what was in
+    // the request", and a reader chasing a model's behaviour wants the request as it was sent.
+    const request = JSON.stringify(messages)
+    // The span carries what fits (Tempo cuts at 2 KB and says nothing, so the cap is ours and
+    // marked); the log record carries the whole of it, joined to this trace by trace id.
+    annotate(input.parentSpan, contentAttributes({ 'app.model.messages': request }))
+    logTurnContent('messages', request, input.call?.requestId)
     clearTimeout(timer)
   }
 }

@@ -1,0 +1,309 @@
+{
+  "uid": "cia-turn-flow",
+  "title": "Turn flow: question, retrieval, agent loop, tools",
+  "description": "One turn end to end, for debugging and security operations. Spans come from app/security/telemetry/spans.ts. Structural attributes (counts, labels, statuses) are always exported. Question text, evidence paths and tool arguments appear only on a developer stack with TELEMETRY_DEBUG_CONTENT=1 and APP_ENV local or test; uat and production refuse to start with that flag, and a deployed collector does not allowlist those attributes.",
+  "tags": [
+    "projectA",
+    "turn",
+    "secops"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Turns: pick one to open its flow",
+      "description": "One row per turn span. run_handle matches the run the interface shows and the turns table, so a turn can be followed from here into the application. Click the trace id for the waterfall: turn, scope, retrieval, each agent round, each tool.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"turn\" } | select(span.app.turn.run_handle, span.app.turn.scope_label, span.app.turn.run_state, span.app.turn.reason, span.app.retrieval.seed_source, span.app.retrieval.status, span.app.retrieval.items, span.app.turn.question)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Agent rounds: what each round did and why it ended",
+      "description": "One row per round of the tool loop. stop_reason says how the round ended: tool_use (it asked for tools), end_turn, iterations, deadline, aborted, model_error, output_blocked, or tool_budget_exhausted when the cap refused a sixth round.",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"agent.round\" } | select(span.app.agent.round, span.app.agent.stop_reason, span.app.agent.tools_requested, span.app.agent.iterations, span.app.error.code)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Tool calls: what the model asked the agent for",
+      "description": "One row per tool the model requested and the agent executed, with the round it belongs to and how it ended. status: ok, timeout, error, refused, unknown, or index for a pre-run the system ran before the model's first turn. Arguments appear only on a developer stack.",
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ name = \"agent.tool\" } | select(span.app.tool.name, span.app.tool.status, span.app.agent.round, span.app.tool.input)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 8,
+      "type": "logs",
+      "title": "The full request the model was sent (developer stack only)",
+      "description": "Tempo truncates a span attribute at 2048 bytes, so app.model.messages on the turn span carries the opening of the request and a count of what was cut. The whole array is here, stamped with the trace and span id by the OpenTelemetry bridge: expand a line, or add | trace_id=\"...\" to pin it to the turn above. Present only on a developer stack, where TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test; everywhere else the record is never written and the body limit of 160 bytes applies as it does to every other log.",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "expr": "{service_name=\"projectA\"} | app_content_kind=\"messages\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none",
+        "enableLogDetails": true
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Model calls: the provider leg of each round",
+      "description": "The outbound call to the gateway. Duration here against the round duration above separates model latency from tool latency.",
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 24,
+        "h": 7
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "{ span.server.address = \"llm-gateway\" } | select(span.http.request.method, span.server.address, status, statusMessage)",
+          "limit": 50,
+          "tableType": "spans"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Turns per minute, by scope and outcome",
+      "description": "app_turns_total, split by the scope the classifier assigned, the state the run ended in, and whether the evidence gate released the answer.",
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (app_scope_label, app_run_state, app_gate_released) (increase(app_turns_total[1m]))",
+          "legendFormat": "{{app_scope_label}} / {{app_run_state}} / released={{app_gate_released}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Withheld by the evidence gate, by mechanism",
+      "description": "app_gate_withheld_total. A mechanism appearing here that is not a quoted comment means a budget or the verifier removed the last piece of evidence for a sentence.",
+      "gridPos": {
+        "x": 12,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "A",
+          "expr": "sum by (app_gate_mechanism) (increase(app_gate_withheld_total[1m]))",
+          "legendFormat": "{{app_gate_mechanism}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Security events on the turn path (click trace to open the flow)",
+      "description": "The catalogued events a turn can raise: injection.suspected, answer.claim_withheld, policy.enforced, canary.followed, question.url_requested, content.url_masked, content.pii_masked, egress.forbidden, error.unhandled. Fields are catalogue-capped, so no request content rides here regardless of the developer flag.",
+      "gridPos": {
+        "x": 0,
+        "y": 52,
+        "w": 24,
+        "h": 9
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "refId": "A",
+          "expr": "{service_name=\"projectA\"} | app_security_event=~\"injection.suspected|answer.claim_withheld|policy.enforced|canary.followed|question.url_requested|content.url_masked|content.pii_masked|egress.forbidden|error.unhandled\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "format": "auto",
+            "keepTime": false
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "^(Time|app_security_event|app_security_severity|app_policy_rule|app_error_code|app_error_cause|app_request_id|trace_id)$"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "app_security_event": 1,
+              "app_security_severity": 2,
+              "app_policy_rule": 3,
+              "app_error_code": 4,
+              "app_error_cause": 5,
+              "app_request_id": 6,
+              "trace_id": 7
+            },
+            "renameByName": {
+              "app_security_event": "event",
+              "app_security_severity": "severity",
+              "app_policy_rule": "rule",
+              "app_error_code": "error code",
+              "app_error_cause": "cause",
+              "app_request_id": "request id",
+              "trace_id": "trace"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      }
+    }
+  ]
+}

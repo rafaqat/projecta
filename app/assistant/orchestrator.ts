@@ -3,6 +3,7 @@ import type { AnswerEvent } from '#app/assistant/protocol'
 import type { Scope } from '#app/security/scope'
 import type { CallContext } from '#app/audit/ledger'
 import type { TurnTrace } from '#app/audit/decision_record'
+import type { Span } from '@opentelemetry/api'
 
 /**
  * The only way the answer route and the eval API reach the agent loop
@@ -24,6 +25,11 @@ export interface TurnInput {
   call?: CallContext
   /** Filled by the implementation for the decision record (design §9); not an event. */
   trace?: TurnTrace
+  /**
+   * The turn's span (ADR-023). Owned by the caller, because the gate's outcome is known after the
+   * orchestrator's stream ends: the orchestrator annotates it, the caller closes it.
+   */
+  turnSpan?: Span
   /**
    * The turn's evidence once minted, for the gate's quoted-comment rule (it is built before the
    * orchestrator runs and asks the evidence lazily); not an event.

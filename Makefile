@@ -41,6 +41,20 @@ setup: doctor .env models build up seed
 doctor:  ## check Docker memory, /etc/hosts names, tools and ports
 	sh scripts/doctor.sh
 
+# Adds a dependency without breaking `npm ci`. npm on macOS re-resolves the tree and drops
+# `@emnapi/wasi-threads`, an optional dependency of `@tailwindcss/oxide-wasm32-wasi`, which the
+# image build then refuses with "package.json and package-lock.json are not in sync". It reproduces
+# with any package, so the lockfile is resolved in the image's own Linux and installed here with
+# `npm ci`, which reads the lockfile without rewriting it.
+#   make dep PKG=@pyroscope/nodejs@0.6.4
+.PHONY: dep
+dep:
+	@test -n "$(PKG)" || { echo 'usage: make dep PKG=name@version'; exit 1; }
+	docker run --rm -v "$(PWD)":/w -w /w node:24-slim \
+		npm install --save $(PKG) --package-lock-only --ignore-scripts
+	npm ci
+	@echo "$(PKG) added; package-lock.json was resolved in linux, node_modules installed from it"
+
 # The stack database from the host, for ace commands run outside Compose.
 STACK_DB = DB_HOST=127.0.0.1 DB_PORT=$(POSTGRES_HOST_PORT)
 # Tests run against the app_test database on the stack's Postgres (tests/bootstrap migrates it);

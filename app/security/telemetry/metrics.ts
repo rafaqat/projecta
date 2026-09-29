@@ -40,6 +40,18 @@ export const appMetrics = {
       .add(1, allowlisted({ 'app.ingest.state': state, 'app.ingest.trigger': trigger }))
   },
 
+  /**
+   * Fast database spans a trace did not carry (quiet_db_spans.ts). The spans are dropped so a
+   * turn's waterfall is readable; the count is kept so a query storm is still visible.
+   */
+  databaseSpansDropped(count: number) {
+    meter()
+      .createCounter('app.db.spans.dropped', {
+        description: 'Database spans dropped below the duration threshold',
+      })
+      .add(count)
+  },
+
   /** How long one ingest step took, in seconds. */
   ingestStep(step: string, milliseconds: number) {
     meter()

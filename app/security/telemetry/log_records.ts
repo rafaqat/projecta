@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import type { Attributes } from '@opentelemetry/api'
 import type { ExportResult } from '@opentelemetry/core'
 import type { LogRecordExporter, ReadableLogRecord } from '@opentelemetry/sdk-logs'
+import { contentTelemetryEnabled } from '#app/security/telemetry/debug_content'
 
 /**
  * Log records leave the process under the same discipline as spans
@@ -23,6 +24,8 @@ export const LOG_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.ingest.ref',
   'app.ingest.trigger',
   'app.job',
+  // The kind of turn content a record's body carries (content_log.ts); developer stacks only.
+  'app.content.kind',
   'app.error.code',
   'app.error.cause',
   'app.error.hash',
@@ -138,6 +141,14 @@ export function exportedBodyOf(record: Record<string, unknown>, body: unknown): 
       .digest('hex')
       .slice(0, 16)
     return `${type} ${code} ${hash}`
+  }
+  // A turn-content record is the one deliberate exception: the whole point of it is a payload too
+  // large for a span attribute, it is written only while `contentTelemetryEnabled()` holds
+  // (content_log.ts returns before writing otherwise), and it names itself with `app.content.kind`
+  // so the exception is legible here rather than implied. Everything else keeps the 160-byte limit,
+  // which is what stops an exception message leaving inside a `msg`.
+  if (typeof record['app.content.kind'] === 'string' && contentTelemetryEnabled()) {
+    return typeof body === 'string' ? body : ''
   }
   return typeof body === 'string' ? body.slice(0, BODY_LIMIT) : ''
 }

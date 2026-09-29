@@ -39,6 +39,32 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.scope.label',
   'app.scope.stage',
   'app.scope.rule_id',
+  // The turn's own spans (app/security/telemetry/spans.ts). Counts, labels and statuses: the shape
+  // of a turn, never its text. Content rides only under the developer flag (debug_content.ts) and
+  // is deliberately absent from this list.
+  'app.turn.run_handle',
+  'app.turn.commit',
+  'app.turn.scope_label',
+  'app.turn.run_state',
+  'app.turn.reason',
+  'app.turn.released',
+  'app.turn.citations',
+  'app.turn.withheld_count',
+  'app.retrieval.seed_source',
+  'app.retrieval.status',
+  'app.retrieval.seeds',
+  'app.retrieval.items',
+  'app.retrieval.chunks',
+  'app.agent.round',
+  'app.agent.tools_requested',
+  'app.agent.stop_reason',
+  'app.agent.iterations',
+  'app.tool.name',
+  'app.tool.status',
+  // Which system prompt produced the answer: the file's id, its version and the head of its
+  // sha256, which configHash already covers. Identifies the text without carrying it.
+  'app.model.system_prompt',
+  'app.gate.mechanism',
   // Security events as span events, and log records (app/security/telemetry/log_records.ts).
   'app.security.event',
   'app.security.severity',
@@ -50,5 +76,4 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.ingest.step',
   'app.run.state',
   'app.gate.released',
-  'app.gate.mechanism',
 ])
