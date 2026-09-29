@@ -1,7 +1,7 @@
 {
   "uid": "cia-turn-flow",
   "title": "Turn flow: question, retrieval, agent loop, tools",
-  "description": "A turn, by the question you are asking of it. Reading one turn is a log, so the narrative is first. How turns behave is a metric. Why one was slow is a trace, which is the only question a waterfall answers better than a log line. Spans carry structure and timing and no text: Tempo truncates an attribute at 2048 bytes, so content rides a log record instead, written only on a developer stack (ADR-0023).",
+  "description": "A turn, by the question you are asking of it. Reading one turn is a log, so the narrative is first. How turns behave is a metric. Why one was slow is a trace, which is the only question a waterfall answers better than a log line. Spans carry structure and timing and no text: Tempo truncates an attribute at 2048 bytes, so content rides a log record instead, written only on a developer stack and dropped by the collector unless it holds its own key too (ADR-0025).",
   "tags": [
     "projectA",
     "turn",
@@ -33,7 +33,7 @@
       "id": 1,
       "type": "logs",
       "title": "Every turn, as a log",
-      "description": "One record per turn: the question, the scope decision and the rule that made it, retrieval and the evidence it chose, the seeds, then each round with the tool it ran, and how the turn ended. This is the readable account; the trace panels below are for when the question is timing. Developer stack only: the record is written when TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test, and nowhere else, so on a deployed stack this panel is empty and that is correct rather than broken.",
+      "description": "One record per turn: the question, the scope decision and the rule that made it, retrieval and the evidence it chose, the seeds, then each round with the tool it ran, and how the turn ended. This is the readable account; the trace panels below are for when the question is timing. Developer stack only, behind three keys (ADR-0025): the application writes the record when TELEMETRY_DEBUG_CONTENT=1 and APP_ENV is local or test, and the collector drops it unless its own OTEL_ALLOW_CONTENT_LOGS=1. On a deployed stack this panel is empty, and that is correct rather than broken.",
       "gridPos": {
         "x": 0,
         "y": 1,
@@ -69,7 +69,7 @@
       "id": 2,
       "type": "logs",
       "title": "The request, the answer, and what the gate withheld",
-      "description": "app_content_kind: \"messages\" is the literal array the model was sent, whole, which a span attribute cannot hold because Tempo truncates one at 2048 bytes; \"answer\" is what was released; \"withheld\" is what the evidence gate held back and appears in no other record, since the request array is what the model was sent rather than what it produced. Developer stack only: the record is written when TELEMETRY_DEBUG_CONTENT is set and APP_ENV is local or test, and nowhere else, so on a deployed stack this panel is empty and that is correct rather than broken.",
+      "description": "app_content_kind: \"messages\" is the literal array the model was sent, whole, which a span attribute cannot hold because Tempo truncates one at 2048 bytes; \"answer\" is what was released; \"withheld\" is what the evidence gate held back and appears in no other record, since the request array is what the model was sent rather than what it produced. Developer stack only, behind three keys (ADR-0025): the application writes the record when TELEMETRY_DEBUG_CONTENT=1 and APP_ENV is local or test, and the collector drops it unless its own OTEL_ALLOW_CONTENT_LOGS=1. On a deployed stack this panel is empty, and that is correct rather than broken.",
       "gridPos": {
         "x": 0,
         "y": 13,

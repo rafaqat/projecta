@@ -136,6 +136,12 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
     command: ['--config=/etc/otelcol/collector.yaml']
+    environment:
+      # The third key for content log records (ADR-0025). Absent or anything but 1, and
+      # `filter/content` drops every record carrying `app.content.kind` before it reaches an
+      # exporter, whatever the application decided. Set on a developer stack only, and separately
+      # from the application's TELEMETRY_DEBUG_CONTENT so one mistake cannot set both.
+      OTEL_ALLOW_CONTENT_LOGS: ${OTEL_ALLOW_CONTENT_LOGS:-}
     volumes:
       - ./otel/collector.yaml:/etc/otelcol/collector.yaml:ro
       - ../tmp/otel:/var/lib/otel

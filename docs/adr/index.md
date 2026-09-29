@@ -27,3 +27,4 @@ accepted one. Propose a new ADR with `status: proposed` and stop for human accep
 | [ADR-0022](0022-per-workspace-lexical-corpus.md) | A workspace is ranked against its own corpus, not the cluster's | accepted |
 | [ADR-0023](0023-telemetry-attribute-classes.md) | Telemetry carries three classes of attribute; content is a developer affordance, not a deployment setting | accepted |
 | [ADR-0024](0024-profiles-bypass-the-collector.md) | Profiles leave the process without passing the Collector: a stack frame is a symbol, not data | accepted |
+| [ADR-0025](0025-content-rides-a-log-record.md) | Turn content rides a log record, not a span attribute; the third key moves with it | proposed |

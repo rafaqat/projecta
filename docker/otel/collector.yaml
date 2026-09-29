@@ -65,9 +65,9 @@ processors:
       - app.gate.mechanism
       # Content does not ride span attributes: Tempo truncates one at 2048 bytes, so a question or
       # a request array arrived as its first 2 KB. It rides a log record's body instead
-      # (app/security/telemetry/content_log.ts), which this label names and which the application
-      # writes only when APP_ENV is local or test AND TELEMETRY_DEBUG_CONTENT=1. A deployed
-      # collector need not carry `app.content.kind`; without it the records lose their label.
+      # (app/security/telemetry/content_log.ts), labelled `app.content.kind` above. Note that
+      # allowlisting that label does not gate the prose: this allowlist governs attributes, and a
+      # body is not an attribute. `filter/content` below is what gates it.
       - app.security.event
       - app.security.severity
       - app.repository.id
@@ -91,6 +91,22 @@ processors:
       - "-----BEGIN [A-Z ]*PRIVATE KEY-----"
       - "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
     summary: info
+  # THE THIRD KEY, held outside the application (ADR-0025).
+  #
+  # Content used to be a span attribute, and the allowlist above could therefore withhold it: the
+  # content was the attribute. Content is now a log record's body, and the allowlist governs
+  # attributes only, so it cannot withhold prose. This processor replaces that control.
+  #
+  # Unset means drop. A deployed collector that configures nothing is the safe one, which is the
+  # direction the old control ran in and the reason for stating it this way rather than asking a
+  # deployment to add a stripping processor it could forget. The variable is deliberately not
+  # TELEMETRY_DEBUG_CONTENT: two different names in two different processes mean no single
+  # `export` opens both, which is the property ADR-0023 wanted from a key it held over here.
+  filter/content:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["app.content.kind"] != nil and "${env:OTEL_ALLOW_CONTENT_LOGS:-}" != "1"'
   batch:
     timeout: 1s
 
@@ -116,7 +132,7 @@ service:
     # redaction and land in Loki beside the traces, correlated by trace id and request id.
     logs:
       receivers: [otlp]
-      processors: [redaction, batch]
+      processors: [filter/content, redaction, batch]
       exporters: [otlp_grpc/lgtm, file/logs]
     # Metrics: RED from the HTTP instrumentation and the application's counters, into Prometheus.
     metrics:
