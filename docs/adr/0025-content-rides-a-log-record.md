@@ -47,8 +47,19 @@ here so that one document describes the whole arrangement.
 
 **1. Structural.** Counts, labels, statuses and identifiers from closed sets: the run handle, the
 scope label and stage, the seed source, retrieval and evidence counts, the round number, the tool
-name and status, the stop reason, the gate mechanism. Always exported, in every environment. The
-values come from enumerations the application defines, so they cannot carry content.
+name and status, the stop reason, the gate mechanism, and the model's token counts. Always exported,
+in every environment. The values come from enumerations the application defines or from integers the
+provider reports, so they cannot carry content.
+
+The token counts are the `gen_ai.usage.*` keys on the round span, and they arrive from the SDK
+adapter through a callback because they exist nowhere else (INV-01). Four counts and a completeness
+flag: the provider reports cached tokens separately from `input_tokens` rather than inside it, so
+without the cache counts a well-cached round reads as a shrunken prompt; and a round that failed
+mid-stream knows its input tokens and never learned its output, so the output count is omitted rather
+than written as a zero, with `gen_ai.usage.complete` carrying that distinction because an absent
+count is otherwise indistinguishable from a free one once a panel sums it. `gen_ai.provider.name` is
+deliberately not among them: the gateway's route table selects the provider, so the application
+cannot write it, and a key nothing can write is a claim an allowlist cannot keep.
 
 **2. Cause.** The error class taken from the constructor rather than `name`, and the operating
 system's errno beneath a transport failure, as `app.error.code` and `app.error.cause`. Always
@@ -135,8 +146,19 @@ The boot guard is unchanged: uat and production refuse to start with `TELEMETRY_
   than when it is present, and that the Collector's key does not share a name with the application
   flag. Ablated in both directions: removing the processor from the pipeline and inverting the
   comparison each turn it red.
-- `tests/unit/security/declared_attributes.spec.ts` fails on an allowlisted `app.*` key that nothing
-  writes, which is what caught the content attributes' entries outliving the attributes themselves.
+- `tests/unit/security/declared_attributes.spec.ts` fails on an allowlisted key that nothing writes,
+  which is what caught the content attributes' entries outliving the attributes themselves. Its
+  filter was `app.`-only and now covers every namespace: the five `gen_ai.*` keys had been declared
+  in both allowlists and written by nothing since they were added, and this test reported clean
+  throughout, because a guard whose domain is narrower than the thing it guards passes truthfully and
+  proves nothing.
+- `tests/unit/security/usage_attributes.spec.ts` asserts that a completed call reports every count,
+  that a call which died mid-stream omits the output count and sets `complete` false, and that every
+  key the mapping can write is allowlisted. Ablated: writing `0` for the unknown output turns it red,
+  and so does removing a key from the allowlist. The first ablation is also what revealed that the
+  assertion had originally been vacuous — chai reads a dotted argument to `notProperty` as a nested
+  path, so it looked for `attributes.gen_ai` and passed while the flat key held a zero. Every
+  attribute key here is dotted, so that assertion form is unusable on all of them.
 - Verified against a running Collector at the pinned contrib image, posting one record labelled
   `app.content.kind` and one not: with `OTEL_ALLOW_CONTENT_LOGS` unset the labelled body is absent
   from the export and the other survives; with it set to `1` both survive.

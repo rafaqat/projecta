@@ -27,12 +27,22 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.error.code',
   'app.error.cause',
   'app.error.hash',
-  // model calls (design §15)
+  // model calls (design §15). Written on the round span by the agent; the counts arrive from the SDK
+  // adapter through `onUsage`, because they exist nowhere else (INV-01). `gen_ai.provider.name` used
+  // to sit here and was removed: provider selection belongs to the gateway's route table, so the
+  // application cannot write it, and a key nothing can write is a claim the allowlist cannot keep.
   'gen_ai.conversation.id',
-  'gen_ai.provider.name',
   'gen_ai.request.model',
   'gen_ai.usage.input_tokens',
   'gen_ai.usage.output_tokens',
+  // Reported separately from `input_tokens` rather than inside it, so a cached round shows a small
+  // input count and these say why instead of it reading as a shrunken prompt.
+  'gen_ai.usage.cache_read_input_tokens',
+  'gen_ai.usage.cache_creation_input_tokens',
+  // Whether the counts above are the whole story. A round that failed mid-stream knows its input
+  // tokens and never learned its output, and an absent count is otherwise indistinguishable from a
+  // free one once a panel sums it.
+  'gen_ai.usage.complete',
   // gateway and scope decisions
   'app.policy.decision',
   'app.policy.rule',

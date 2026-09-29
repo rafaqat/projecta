@@ -58,8 +58,12 @@ async function applicationSource(): Promise<string> {
 test.group('every declared attribute has a producer', () => {
   test('no span attribute is allowlisted and never written', async ({ assert }) => {
     const source = await applicationSource()
+    // Every namespace, not just `app.`. The original filter was `app.`-only, and the two keys that
+    // outlived that narrowing were `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`:
+    // declared in both allowlists, written by nothing, and reported clean by this very test. A guard
+    // whose domain is narrower than the thing it guards passes truthfully and proves nothing.
     const dead = [...SPAN_ATTRIBUTE_ALLOWLIST]
-      .filter((key) => key.startsWith('app.') && !SET_BY_INSTRUMENTATION.has(key))
+      .filter((key) => !SET_BY_INSTRUMENTATION.has(key))
       .filter((key) => !source.includes(`'${key}'`))
 
     assert.deepEqual(dead, [], 'allowlisted with nothing to write them')

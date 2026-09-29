@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
 import { startSpan } from '#app/security/telemetry/spans'
 import { logTurnContent } from '#app/security/telemetry/content_log'
+import { usageAttributes } from '#app/security/telemetry/usage_attributes'
 import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
@@ -140,12 +141,20 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
         {
           'app.agent.round': pass,
           'app.agent.iterations': iterations,
+          // Which model answered this round, and which turn the round belongs to. The handle is on
+          // the turn span, not here, so without this a round could be filtered by turn only by
+          // traversing to its parent. Under the conventional name a round is its own filter.
+          'gen_ai.request.model': input.model.id,
+          'gen_ai.conversation.id': input.runHandle,
           // The question is on the turn span, which is this span's parent. Repeating it per round
           // carried it seven times through a six-round turn for nothing a nested trace does not
           // already show.
         },
         input.parentSpan
       )
+      // This pass's span by value. `round` is the mutable handle the exit paths close; a callback
+      // that outlives the pass must hold the span itself.
+      const thisRound = round
       const assistant: ContentBlock[] = []
       const toolUses: Array<{ id: string; name: string; input: unknown }> = []
       let textSoFar = ''
@@ -160,7 +169,14 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
             toolChoice: toolsAllowed ? 'auto' : 'none',
           },
           upstream,
-          input.call
+          // A per-round context, so the counts land on the round that spent them. The adapter is the
+          // only place they exist (INV-01) and this is the only place a round span is in scope. The
+          // callback closes over `thisRound`, not over `round`: `round` is reassigned on the next
+          // pass, so closing over it would let a late report annotate the following round's span.
+          input.call && {
+            ...input.call,
+            onUsage: (usage, status) => thisRound.setAttributes(usageAttributes(usage, status)),
+          }
         )) {
           if (event.type === 'text') {
             textSoFar += event.delta
