@@ -2,7 +2,6 @@ import { SpanKind, SpanStatusCode } from '@opentelemetry/api'
 import type { ExportResult } from '@opentelemetry/core'
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base'
 import { SPAN_ATTRIBUTE_ALLOWLIST } from '#app/security/telemetry/allowlist'
-import { CONTENT_ATTRIBUTES, contentTelemetryEnabled } from '#app/security/telemetry/debug_content'
 
 /**
  * Wraps any exporter and hands it spans whose attributes are reduced to the
@@ -26,13 +25,9 @@ export class AllowlistSpanExporter implements SpanExporter {
 }
 
 function allowlisted(source: ReadableSpan['attributes']): ReadableSpan['attributes'] {
-  // Read once per export batch, not per attribute: the answer cannot change mid-batch, and a
-  // developer flipping the flag sees it take effect on the next batch.
-  const content = contentTelemetryEnabled()
   const attributes: ReadableSpan['attributes'] = {}
   for (const [key, value] of Object.entries(source)) {
-    if (SPAN_ATTRIBUTE_ALLOWLIST.has(key) || (content && CONTENT_ATTRIBUTES.has(key)))
-      attributes[key] = value
+    if (SPAN_ATTRIBUTE_ALLOWLIST.has(key)) attributes[key] = value
   }
   return attributes
 }

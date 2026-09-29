@@ -1,7 +1,6 @@
 import { test } from '@japa/runner'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { CONTENT_ATTRIBUTES } from '#app/security/telemetry/debug_content'
 import { SPAN_ATTRIBUTE_ALLOWLIST } from '#app/security/telemetry/allowlist'
 
 /**
@@ -9,8 +8,8 @@ import { SPAN_ATTRIBUTE_ALLOWLIST } from '#app/security/telemetry/allowlist'
  *
  * It reads as a capability the system has and a reader can look for, and it fails in exactly the
  * way ADR-0023 warns a missing entry fails: silently, because an attribute that is never set looks
- * identical to one that is filtered out. Ten keys had reached that state, `app.tool.output` and
- * `app.turn.answer` among them, each declared in two allowlists and produced by nothing.
+ * identical to one that is filtered out. Ten keys had reached that state, each declared in two
+ * allowlists and produced by nothing.
  *
  * So every `app.*` key the application declares must appear somewhere that could set it. The check
  * is textual rather than behavioural on purpose: it costs one directory walk, it runs without a
@@ -59,17 +58,14 @@ async function applicationSource(): Promise<string> {
 test.group('every declared attribute has a producer', () => {
   test('no span attribute is allowlisted and never written', async ({ assert }) => {
     const source = await applicationSource()
+    // Every namespace, not just `app.`. The original filter was `app.`-only, and the two keys that
+    // outlived that narrowing were `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens`:
+    // declared in both allowlists, written by nothing, and reported clean by this very test. A guard
+    // whose domain is narrower than the thing it guards passes truthfully and proves nothing.
     const dead = [...SPAN_ATTRIBUTE_ALLOWLIST]
-      .filter((key) => key.startsWith('app.') && !SET_BY_INSTRUMENTATION.has(key))
+      .filter((key) => !SET_BY_INSTRUMENTATION.has(key))
       .filter((key) => !source.includes(`'${key}'`))
 
     assert.deepEqual(dead, [], 'allowlisted with nothing to write them')
-  })
-
-  test('no content attribute is capped and never written', async ({ assert }) => {
-    const source = await applicationSource()
-    const dead = [...CONTENT_ATTRIBUTES].filter((key) => !source.includes(`'${key}'`))
-
-    assert.deepEqual(dead, [], 'content attributes declared with nothing to write them')
   })
 })

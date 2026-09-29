@@ -24,8 +24,10 @@ export const LOG_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   'app.ingest.ref',
   'app.ingest.trigger',
   'app.job',
-  // The kind of turn content a record's body carries (content_log.ts); developer stacks only.
+  // The kind of turn content a record's body carries (content_log.ts); developer stacks only,
+  // with the run handle so a turn's records are findable by the identifier the interface shows.
   'app.content.kind',
+  'app.turn.run_handle',
   'app.error.code',
   'app.error.cause',
   'app.error.hash',

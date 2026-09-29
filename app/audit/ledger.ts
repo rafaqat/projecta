@@ -22,6 +22,19 @@ export interface CallContext {
    * gateway check" without shell access to the container.
    */
   onGatewayDecisions?: (decisions: GatewayDecisions) => void
+  /**
+   * What the call cost, reported once the provider leg has finished one way or another.
+   *
+   * The counts exist only inside the adapter that imports the SDK (INV-01), and the span a reader
+   * opens to ask "why was this round expensive" is the round span, which the agent owns. A callback
+   * carries the numbers across that boundary without giving the ledger an opinion about telemetry or
+   * the agent an opinion about the provider — the same reason `onGatewayDecisions` is one.
+   *
+   * `status` is passed because a round that failed mid-stream knows its input tokens and not its
+   * output tokens, and the difference between "produced nothing" and "never found out" is a
+   * distinction this repository keeps having to make explicit.
+   */
+  onUsage?: (usage: Usage, status: CallStatus) => void
 }
 
 export interface Usage {

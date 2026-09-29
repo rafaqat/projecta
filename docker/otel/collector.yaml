@@ -31,11 +31,16 @@ processors:
       - app.error.code
       - app.error.cause
       - app.error.hash
+      # `gen_ai.provider.name` was removed: the gateway's route table selects the provider, so the
+      # application cannot write it. The cache counts are separate from input_tokens rather than
+      # inside it, and `complete` says whether a round's counts are the whole story.
       - gen_ai.conversation.id
-      - gen_ai.provider.name
       - gen_ai.request.model
       - gen_ai.usage.input_tokens
       - gen_ai.usage.output_tokens
+      - gen_ai.usage.cache_read_input_tokens
+      - gen_ai.usage.cache_creation_input_tokens
+      - gen_ai.usage.complete
       - app.policy.decision
       - app.policy.rule
       - app.scope.label
@@ -63,21 +68,11 @@ processors:
       - app.tool.status
       - app.model.system_prompt
       - app.gate.mechanism
-      # DEVELOPER STACK ONLY. These carry request content and exist so a turn can be reconstructed
-      # on a machine whose repository and questions belong to the person reading them. The
-      # application refuses to emit them unless APP_ENV is local or test AND
-      # TELEMETRY_DEBUG_CONTENT=1 (app/security/telemetry/debug_content.ts), and the boot guard
-      # refuses to start uat or production with that flag set. A deployed collector must not carry
-      # this block: it is the third key, and the only one held outside the application.
-      - app.turn.question
-      - app.turn.answer
-      - app.turn.withheld
-      - app.tool.input
-      - app.tool.output
-      - app.evidence.paths
-      - app.evidence.text
-      - app.model.messages
-      - app.seed.names
+      # Content does not ride span attributes: Tempo truncates one at 2048 bytes, so a question or
+      # a request array arrived as its first 2 KB. It rides a log record's body instead
+      # (app/security/telemetry/content_log.ts), labelled `app.content.kind` above. Note that
+      # allowlisting that label does not gate the prose: this allowlist governs attributes, and a
+      # body is not an attribute. `filter/content` below is what gates it.
       - app.security.event
       - app.security.severity
       - app.repository.id
@@ -101,6 +96,22 @@ processors:
       - "-----BEGIN [A-Z ]*PRIVATE KEY-----"
       - "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
     summary: info
+  # THE THIRD KEY, held outside the application (ADR-0025).
+  #
+  # Content used to be a span attribute, and the allowlist above could therefore withhold it: the
+  # content was the attribute. Content is now a log record's body, and the allowlist governs
+  # attributes only, so it cannot withhold prose. This processor replaces that control.
+  #
+  # Unset means drop. A deployed collector that configures nothing is the safe one, which is the
+  # direction the old control ran in and the reason for stating it this way rather than asking a
+  # deployment to add a stripping processor it could forget. The variable is deliberately not
+  # TELEMETRY_DEBUG_CONTENT: two different names in two different processes mean no single
+  # `export` opens both, which is the property ADR-0023 wanted from a key it held over here.
+  filter/content:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["app.content.kind"] != nil and "${env:OTEL_ALLOW_CONTENT_LOGS:-}" != "1"'
   batch:
     timeout: 1s
 
@@ -126,7 +137,7 @@ service:
     # redaction and land in Loki beside the traces, correlated by trace id and request id.
     logs:
       receivers: [otlp]
-      processors: [redaction, batch]
+      processors: [filter/content, redaction, batch]
       exporters: [otlp_grpc/lgtm, file/logs]
     # Metrics: RED from the HTTP instrumentation and the application's counters, into Prometheus.
     metrics:

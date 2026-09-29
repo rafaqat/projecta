@@ -264,6 +264,10 @@ export function createModelClient(model = MODELS.answer, overrides?: ClientOverr
           throw new OutputBlockedError(frame.error.rule ?? 'output', error)
         throw error
       } finally {
+        // Reported on every exit path, including a throw and an abort, because a round that cost
+        // input tokens and then failed still cost them. The ledger row and the span therefore agree
+        // about what was spent even when the call did not finish.
+        call?.onUsage?.(usage, status)
         if (call && attributed) await endAttributedCall(call, attributed, usage, status)
       }
     },

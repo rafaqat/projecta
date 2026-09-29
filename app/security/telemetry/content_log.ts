@@ -17,12 +17,22 @@ import { contentTelemetryEnabled } from '#app/security/telemetry/debug_content'
  * limit stands for everything else and the exception is visible in both places rather than being a
  * gap someone finds later.
  */
-export type ContentKind = 'messages' | 'evidence' | 'answer'
+export type ContentKind = 'messages' | 'answer' | 'withheld' | 'turn'
 
-export function logTurnContent(kind: ContentKind, payload: string, requestId = ''): boolean {
+export function logTurnContent(
+  kind: ContentKind,
+  payload: string,
+  requestId = '',
+  runHandle = ''
+): boolean {
   if (!contentTelemetryEnabled() || !payload) return false
   // The field names are the exported attribute names: log_records.ts copies any flat key that is
-  // on the allowlist, so no mapping has to be kept in step with this call site.
-  logger.info({ 'app.content.kind': kind, 'app.request.id': requestId }, payload)
+  // on the allowlist, so no mapping has to be kept in step with this call site. The run handle is
+  // here because it is the identifier a reader already has: it is on the turn span, in the turns
+  // table and on the page, so one value finds every record for a turn.
+  logger.info(
+    { 'app.content.kind': kind, 'app.request.id': requestId, 'app.turn.run_handle': runHandle },
+    payload
+  )
   return true
 }

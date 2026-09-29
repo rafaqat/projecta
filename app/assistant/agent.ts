@@ -11,8 +11,9 @@ import type { Tool, ToolResultContent } from '#app/assistant/tools'
 import type { CallContext } from '#app/audit/ledger'
 import { createHash } from 'node:crypto'
 import { classifyModelError } from '#app/assistant/model_error'
-import { annotate, contentAttributes, startSpan } from '#app/security/telemetry/spans'
+import { startSpan } from '#app/security/telemetry/spans'
 import { logTurnContent } from '#app/security/telemetry/content_log'
+import { usageAttributes } from '#app/security/telemetry/usage_attributes'
 import type { Span } from '@opentelemetry/api'
 import logger from '@adonisjs/core/services/logger'
 import { securityEvents } from '#app/security/events/index'
@@ -84,6 +85,8 @@ export interface AgentInput {
    * context: this is a generator, and the context does not survive a yield (spans.ts).
    */
   parentSpan?: Span
+  /** The turn's run handle, so its content records are findable by the identifier a reader has. */
+  runHandle?: string
 }
 
 export interface PreRun {
@@ -100,6 +103,11 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
   const messages = initialMessages(input)
   const tools = new Map(input.tools.map((t) => [t.spec.name, t]))
   let iterations = 0
+  // Passes through the loop, which is what a round span represents. Not the same as `iterations`,
+  // which counts only the rounds that executed tools and is what the cap is measured against: the
+  // round that refuses a sixth tool call and the round that then answers both leave `iterations` at
+  // five, so numbering spans by it gave two spans the same round.
+  let pass = 0
   let toolsAllowed = true
   // The loop's spans (ADR-023). One per round, closed on every exit path including a throw, so a
   // turn that ends mid-round leaves a span saying which round and why rather than nothing.
@@ -120,10 +128,6 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'app.tool.name': run.name,
           'app.tool.status': 'index',
           'app.agent.round': 0,
-          ...contentAttributes({
-            'app.tool.input': JSON.stringify(run.input ?? null),
-            'app.tool.output': JSON.stringify(run.content ?? null),
-          }),
         },
         input.parentSpan
       )
@@ -131,17 +135,26 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
       yield { type: 'tool', name: run.name, input: run.input, status: 'index' }
     }
     for (;;) {
+      pass += 1
       round = startSpan(
         'agent.round',
         {
-          'app.agent.round': iterations + 1,
+          'app.agent.round': pass,
           'app.agent.iterations': iterations,
+          // Which model answered this round, and which turn the round belongs to. The handle is on
+          // the turn span, not here, so without this a round could be filtered by turn only by
+          // traversing to its parent. Under the conventional name a round is its own filter.
+          'gen_ai.request.model': input.model.id,
+          'gen_ai.conversation.id': input.runHandle,
           // The question is on the turn span, which is this span's parent. Repeating it per round
           // carried it seven times through a six-round turn for nothing a nested trace does not
           // already show.
         },
         input.parentSpan
       )
+      // This pass's span by value. `round` is the mutable handle the exit paths close; a callback
+      // that outlives the pass must hold the span itself.
+      const thisRound = round
       const assistant: ContentBlock[] = []
       const toolUses: Array<{ id: string; name: string; input: unknown }> = []
       let textSoFar = ''
@@ -156,7 +169,14 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
             toolChoice: toolsAllowed ? 'auto' : 'none',
           },
           upstream,
-          input.call
+          // A per-round context, so the counts land on the round that spent them. The adapter is the
+          // only place they exist (INV-01) and this is the only place a round span is in scope. The
+          // callback closes over `thisRound`, not over `round`: `round` is reassigned on the next
+          // pass, so closing over it would let a late report annotate the following round's span.
+          input.call && {
+            ...input.call,
+            onUsage: (usage, status) => thisRound.setAttributes(usageAttributes(usage, status)),
+          }
         )) {
           if (event.type === 'text') {
             textSoFar += event.delta
@@ -247,8 +267,7 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'agent.tool',
           {
             'app.tool.name': use.name,
-            'app.agent.round': iterations,
-            ...contentAttributes({ 'app.tool.input': JSON.stringify(use.input ?? null) }),
+            'app.agent.round': pass,
           },
           round
         )
@@ -257,10 +276,6 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
           'app.tool.status': outcome.status,
           // What the model was handed back, beside what it asked for. Without this a trace shows
           // the request and the verdict and leaves the answer's input to inference.
-          ...contentAttributes({
-            'app.tool.output':
-              outcome.status === 'ok' ? JSON.stringify(outcome.content ?? null) : outcome.status,
-          }),
         })
         toolSpan.end()
         yield {
@@ -300,8 +315,7 @@ export async function* runAgent(input: AgentInput, signal: AbortSignal): AsyncIt
     const request = JSON.stringify(messages)
     // The span carries what fits (Tempo cuts at 2 KB and says nothing, so the cap is ours and
     // marked); the log record carries the whole of it, joined to this trace by trace id.
-    annotate(input.parentSpan, contentAttributes({ 'app.model.messages': request }))
-    logTurnContent('messages', request, input.call?.requestId)
+    logTurnContent('messages', request, input.call?.requestId, input.runHandle)
     clearTimeout(timer)
   }
 }
